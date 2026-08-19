@@ -4,6 +4,27 @@ English | [中文](README.zh.md)
 
 This reference defines the profile, web-alias, plugin-management, and config-dump command modes. Argv is parsed once through [`src/args.ts`](../src/args.ts), and [`src/bin.ts`](../src/bin.ts) dynamically imports only the selected runner.
 
+## TUI mode
+
+`dsh tui` starts the built-in renderer-neutral terminal shell. `dsh --profile tui`
+is a compatibility spelling that resolves to the same mode, and the installed
+`omdsh` bin is normalized to `dsh tui` before parsing. The first runnable service
+adapter is an explicit in-process loopback enabled with `--demo`; it never reads
+provider credentials or calls a model. A real service-backed adapter will replace
+that port without changing the TUI state contract.
+
+```sh
+dsh tui --demo
+omdsh --demo
+omdsh --demo --once "hello"
+```
+
+`--once` prints one deterministic semantic frame and is the non-TTY smoke path.
+Interactive TTYs use `Enter` to send, `Ctrl+C` to interrupt or exit when idle,
+`Ctrl+G` to detach, and `:help`, `:mode queue|steer`, `:clear`, `:reattach`, and
+`:q` as composer commands. `--patch` is parsed for forward compatibility but is
+rejected until the service-backed adapter owns overlay application.
+
 ## Profile boot
 
 `dsh --profile <name>` boots the profile at `$DSH_HOME/profiles/<name>`. The effective tree is composed over an empty root by applying, in order: each bundle patch named in the profile manifest's `dsh.profile.bundles` list, the profile's own `cordis.patch.yml`, the home-level `$DSH_HOME/cordis.patch.yml` (machine-local preferences shared by every profile, so it outranks the per-profile layer), and each `--patch <path>` overlay in argv order. Later layers win per row; a patch replaces the targeted row's complete `config` value rather than deep-merging keys, and may insert new rows. A parse, schema, resolution, or plugin boot failure is reported and exits nonzero. SIGINT and SIGTERM dispose the mounted root before exit.

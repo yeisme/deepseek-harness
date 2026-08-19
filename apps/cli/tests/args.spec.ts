@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { parseDshArgs } from '../src/args.ts'
+import { normalizeDshArgv, parseDshArgs } from '../src/args.ts'
 
 const parse = (argv: string[]) => parseDshArgs(argv, '1.2.3')
 
@@ -22,18 +22,19 @@ afterEach(() => { vi.restoreAllMocks() })
 
 describe('parseDshArgs', () => {
   it('routes profile boots and the web alias, handing the rest to the app', () => {
-    expect(parse(['--profile', 'tui'])).toEqual({ mode: 'profile', profile: 'tui', patches: [], args: [] })
+    expect(parse(['--profile', 'tui'])).toEqual({ mode: 'tui', profile: 'tui', patches: [], args: [] })
     expect(parse(['--profile', 'tui', '--patch', 'a.yml', '--patch', 'b.yml']))
-      .toEqual({ mode: 'profile', profile: 'tui', patches: ['a.yml', 'b.yml'], args: [] })
+      .toEqual({ mode: 'tui', profile: 'tui', patches: ['a.yml', 'b.yml'], args: [] })
     expect(parse(['web'])).toEqual({ mode: 'profile', profile: 'web', patches: [], args: [] })
     expect(parse(['web', '--patch', 'web.yml']))
       .toEqual({ mode: 'profile', profile: 'web', patches: ['web.yml'], args: [] })
+    expect(parse(['tui', '--demo'])).toEqual({ mode: 'tui', profile: 'tui', patches: [], args: ['--demo'] })
   })
 
   it('ends the launcher flags at the first token it does not own', () => {
     // App flags, including its -h, and positionals reach the app verbatim.
     expect(parse(['--profile', 'tui', '--resume', 'abc']))
-      .toEqual({ mode: 'profile', profile: 'tui', patches: [], args: ['--resume', 'abc'] })
+      .toEqual({ mode: 'tui', profile: 'tui', patches: [], args: ['--resume', 'abc'] })
     expect(parse(['--profile', 'web', '-h']))
       .toEqual({ mode: 'profile', profile: 'web', patches: [], args: ['-h'] })
     expect(parse(['web', '--host', '127.0.0.1', '--port', '8080', '--dev']))
@@ -42,7 +43,7 @@ describe('parseDshArgs', () => {
       .toEqual({ mode: 'profile', profile: 'headless', patches: [], args: ['run', 'the', 'tests'] })
     // Launcher flags placed after that boundary belong to the app too.
     expect(parse(['--profile', 'tui', '--patch', 'a.yml', '--resume', 'b', '--patch', 'late.yml']))
-      .toEqual({ mode: 'profile', profile: 'tui', patches: ['a.yml'], args: ['--resume', 'b', '--patch', 'late.yml'] })
+      .toEqual({ mode: 'tui', profile: 'tui', patches: ['a.yml'], args: ['--resume', 'b', '--patch', 'late.yml'] })
   })
 
   it('routes the plugin pnpm forwarder', () => {
@@ -55,6 +56,24 @@ describe('parseDshArgs', () => {
     // Unknown pnpm flags forward verbatim.
     expect(parse(['plugin', '--profile', 'tui', 'add', '--save-dev', 'x']))
       .toEqual({ mode: 'plugin', profile: 'tui', args: ['add', '--save-dev', 'x'] })
+  })
+
+  it('routes composition preview and smoke with the web profile by default', () => {
+    expect(parse(['composition', 'preview', '--json']))
+      .toEqual({ mode: 'composition', command: 'preview', profile: 'web', patches: [], json: true })
+    expect(parse(['composition', 'preview', '--preset', 'standard']))
+      .toEqual({ mode: 'composition', command: 'preview', profile: 'web', preset: 'standard', patches: [], json: false })
+    expect(parse(['composition', 'smoke', '--preset', 'mine', '--profile', 'tui', '--patch', 'a.yml', '--json']))
+      .toEqual({ mode: 'composition', command: 'smoke', profile: 'tui', preset: 'mine', patches: ['a.yml'], json: true })
+  })
+
+  it('refuses composition misuse with a readable error', () => {
+    // Launcher-level flags before the subcommand are the launcher's, not the
+    // composition command's.
+    expect(exitCode(['--profile', 'web', 'composition', 'preview']))
+      .toBe(1)
+    expect(exitCode(['composition', 'preview', '--preset']))
+      .toBe(1)
   })
 
   it('routes profile and web config dumps', () => {
@@ -72,7 +91,7 @@ describe('parseDshArgs', () => {
 
   it('rejects missing profile, removed flags, and contradictory inputs', () => {
     expect(exitCode([])).toBe(1)
-    expect(exitCode(['tui'])).toBe(1) // an app argument without --profile has no app to reach
+    expect(parse(['tui'])).toEqual({ mode: 'tui', profile: 'tui', patches: [], args: [] })
     expect(exitCode(['--config', 'c.yml'])).toBe(1) // removed
     expect(exitCode(['-p', 'task'])).toBe(1) // removed
     expect(exitCode(['run', 'task'])).toBe(1) // app-owned task replaced the launcher subcommand
@@ -102,5 +121,11 @@ describe('parseDshArgs', () => {
     expect(exitCode(['--help'])).toBe(0)
     expect(exitCode(['-h'])).toBe(0)
     expect(exitCode(['--version'])).toBe(0)
+  })
+
+  it('normalizes the installed omdsh executable to the tui subcommand', () => {
+    expect(normalizeDshArgv(['--demo'], 'omdsh')).toEqual(['tui', '--demo'])
+    expect(normalizeDshArgv(['tui', '--demo'], 'dsh')).toEqual(['tui', '--demo'])
+    expect(normalizeDshArgv([], 'omdsh.js')).toEqual(['tui'])
   })
 })

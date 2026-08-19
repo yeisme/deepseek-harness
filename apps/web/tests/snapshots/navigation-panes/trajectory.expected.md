@@ -2,6 +2,15 @@
   - button "Use actual duration": Duration
   - button "Collapse turns": Turns
   - button "Collapse calls": Calls
+  - group "Filter trajectory records":
+    - button "All" [pressed]
+    - button "Think"
+    - button "Read"
+    - button "Write"
+    - button "Shell"
+    - button "Web"
+    - button "MCP"
+    - button "Other"
   - img
   - searchbox "Search trajectory"
 - region "Trajectory timeline":

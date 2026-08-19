@@ -11,7 +11,10 @@
 | `dsh --profile <name>` | 启动位于 `$DSH_HOME/profiles/<name>` 的指定 profile。 |
 | `dsh --profile headless "job"` | 运行一个全新的持久化会话，打印最终答案并退出。 |
 | `dsh web` | `--profile web` 的别名。 |
+| `dsh tui` | 启动与渲染器无关的终端 UI；`dsh --profile tui` 也会进入同一个内置 shell。 |
+| `omdsh` | `dsh tui` 的已安装快捷命令；使用 `omdsh --demo` 启动本地回环服务。 |
 | `dsh plugin --profile <name> <pnpm args>` | 通过在 profile 目录中转发给 pnpm 来管理该 profile 的插件。 |
+| `dsh composition preview \| smoke --preset <id> [--json]` | 投影一个 agent preset 的组合事实（默认 web profile），不创建会话；拒绝或 smoke 检出残留时 exit 1。 |
 
 运行命令时所在的目录将作为默认 workspace 根目录。`web` 和 `headless` profile 在首次使用时会从随附模板自动初始化；其他任何 profile 都必须通过 `dsh plugin` 创建。
 
@@ -21,11 +24,30 @@
 
 ```sh
 dsh --profile web --port 8080       # --port belongs to the web app
-dsh --profile tui --resume <id>     # example, assuming the tui profile is installed; --resume belongs to the terminal app
+dsh tui --demo --once "hello"       # one local loopback prompt, no credentials or model call
+omdsh --demo                         # start the interactive TUI
 dsh --profile headless "run the tests"
+dsh composition preview --preset standard --json   # one dsh.composition.preview.v0 envelope, no session, no model call
 dsh --profile web --help            # the web app's flags, not the launcher's
 dsh --help                          # the launcher's own help
 ```
+
+## 第一次使用 TUI
+
+当前 CLI 的第一段实现以安全可运行作为目标：`--demo` 将 TUI 连接到进程内
+回环服务，由它原样回显 prompt。这样可以验证 composer、queue/steer 模式、
+中断路径、事件游标和退出清理，不会读取 provider 凭据。下一段实现会把这
+个回环端口替换为真正的 DSH 服务适配器。
+
+```sh
+dsh tui --demo
+omdsh --demo
+omdsh --demo --once "check the TUI wiring"
+```
+
+在 TUI 中，`Enter` 发送，`Ctrl+C` 在运行时中断、空闲时退出，`Ctrl+G` 分离
+视图；`:help`、`:mode steer`、`:clear`、`:q` 等冒号命令用于快速交互。stdout
+不是 TTY 时，请使用 `--once` 获取适合脚本和 smoke test 的确定性 frame。
 
 ## Profile
 

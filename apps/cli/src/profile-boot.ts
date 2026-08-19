@@ -142,6 +142,7 @@ function allPatches(composed: ComposedProfile): PatchOptions[] {
 function composeProfile(
   name: string,
   patchFiles: readonly string[],
+  inlineOverlays: readonly PatchOptions[] = [],
 ): ComposedProfile {
   const profile = prepareProfile(name)
   const homePatches = loadOptionalPatches(NAME, homePatchPath()) ?? []
@@ -151,7 +152,7 @@ function composeProfile(
   for (const row of composeEntries([bundlePatches, profile.patches, homePatches, overlays])) {
     if (typeof row.id === 'string') rows.set(row.id, row)
   }
-  const composedOverlays = [...overlays]
+  const composedOverlays = [...overlays, ...inlineOverlays]
   // The SHIPPED root is the part of the roster only this app can resolve: it
   // sits beside this app's own config, in both the source and built layouts.
   // The writable root the roster appends is `dsh-agent-presets`' own, so a
@@ -180,6 +181,12 @@ export interface RunProfileOptions {
   patchFiles: readonly string[]
   /** The invocation's inner arguments, handed to the tree through `ctx.cmdlineArgs`. */
   args: readonly string[]
+  /**
+   * Launcher-authored overlay patches applied above every user layer — the
+   * one-shot surfaces' own row tweaks, never user config. A one-shot that
+   * needs one composes it here instead of writing a file beside the profile.
+   */
+  inlineOverlays?: PatchOptions[]
 }
 
 /**
@@ -205,7 +212,7 @@ function suppressShutdownError(ctx: Context, signal: AbortSignal, error: unknown
  * @returns the settled root context and the shutdown controller.
  */
 export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Context; shutdown: ProcessShutdown }> {
-  const composed = composeProfile(options.profile, options.patchFiles)
+  const composed = composeProfile(options.profile, options.patchFiles, options.inlineOverlays)
   const app: { current?: Context } = {}
   const shutdown = createProcessShutdown(async () => { await app.current?.fiber.dispose() })
   const signalShutdown = new AbortController()
@@ -270,12 +277,13 @@ export async function runProfile(options: RunProfileOptions): Promise<{ ctx: Con
     && ctx.get('loader') !== undefined) {
     try {
       // Config-only HMR for the live profile patch layer: the web bundle
-      // disables the shared module-reload `hmr` row (its reload lifecycle is
-      // untested), so when the composition leaves no HMR service, mount a
-      // watch-only instance with no module roots — cordis.patch.yml edits stay
-      // live on every long-lived surface. A silent skip would break the
-      // documented hot-reload contract. HMR injects the timer service, which a
-      // bare custom profile may not mount either.
+      // keeps the shared module-reload `hmr` row off by default (opt-in via
+      // DSH_WEB_HMR=1; its full reload lifecycle is not yet in the published
+      // Web e2e suite), so when the composition leaves no HMR service, mount
+      // a watch-only instance with no module roots — cordis.patch.yml edits
+      // stay live on every long-lived surface. A silent skip would break the
+      // documented hot-reload contract. HMR injects the timer service, which
+      // a bare custom profile may not mount either.
       if (ctx.get('hmr') === undefined) {
         if (ctx.get('timer') === undefined) {
           await ctx.loader.create({ name: '@deepseek-ai/cordis-plugin-timer' })

@@ -11,7 +11,10 @@ The `dsh` command is the product launcher for profiles: ordered stacks of plugin
 | `dsh --profile <name>` | Boot the named profile under `$DSH_HOME/profiles/<name>`. |
 | `dsh --profile headless "job"` | Run one fresh persisted session, print the final answer, and exit. |
 | `dsh web` | Alias of `--profile web`. |
+| `dsh tui` | Start the renderer-neutral terminal UI. `dsh --profile tui` resolves to the same built-in shell. |
+| `omdsh` | Installed shorthand for `dsh tui`; use `omdsh --demo` for the local loopback service. |
 | `dsh plugin --profile <name> <pnpm args>` | Manage a profile's plugins by forwarding to pnpm in the profile directory. |
+| `dsh composition preview \| smoke --preset <id> [--json]` | Project one agent preset's composition facts (web profile by default) without starting a session; exit 1 on refusal or, for smoke, detected residue. |
 
 The invoking directory is the default workspace root. The `web` and `headless` profiles auto-initialize on first use from shipped templates; any other profile must be created through `dsh plugin`.
 
@@ -21,11 +24,32 @@ The launcher parses only its own flags and hands everything after them to the bo
 
 ```sh
 dsh --profile web --port 8080       # --port belongs to the web app
-dsh --profile tui --resume <id>     # example, assuming the tui profile is installed; --resume belongs to the terminal app
+dsh tui --demo --once "hello"       # one local loopback prompt, no credentials or model call
+omdsh --demo                         # start the interactive TUI
 dsh --profile headless "run the tests"
+dsh composition preview --preset standard --json   # one dsh.composition.preview.v0 envelope, no session, no model call
 dsh --profile web --help            # the web app's flags, not the launcher's
 dsh --help                          # the launcher's own help
 ```
+
+## First TUI session
+
+The first CLI slice is intentionally safe to run locally: `--demo` connects the
+TUI to an in-process loopback service that echoes prompts. It exercises the
+composer, queue/steer mode, interrupt path, event cursor, and cleanup without
+reading provider credentials. A real DSH service adapter will replace this
+loopback port in the next implementation slice.
+
+```sh
+dsh tui --demo
+omdsh --demo
+omdsh --demo --once "check the TUI wiring"
+```
+
+Inside the TUI, `Enter` sends, `Ctrl+C` interrupts or quits when idle, `Ctrl+G`
+detaches the view, and colon commands such as `:help`, `:mode steer`, `:clear`,
+and `:q` provide quick interaction. When stdout is not a TTY, use `--once` for
+a deterministic frame suitable for scripts and smoke tests.
 
 ## Profiles
 

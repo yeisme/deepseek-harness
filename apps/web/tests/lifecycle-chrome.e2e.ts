@@ -95,7 +95,7 @@ describe('web e2e: lifecycle & chrome (workspace flow / reload / dark mode)', ()
     await expect.poll(() => menu.count()).toBe(0)
   })
 
-  it.skipIf(MODE === 'record')('shows active Plan as the warn-state status action', async () => {
+  it.skipIf(MODE === 'record')('enters through the inactive Plan control and shows active Plan as the warn-state status action', async () => {
     const activeScaffold = await launchWebScaffold()
     const activePage = await newEnglishPage(browser)
     const activeTripwire = watchConsole(activePage)
@@ -104,18 +104,16 @@ describe('web e2e: lifecycle & chrome (workspace flow / reload / dark mode)', ()
       await activePage.waitForSelector('[class*="frame"]', { timeout: 30_000 })
       await connectFreshWorkspace(activePage, activeScaffold.workspaceCwd)
       const input = activePage.locator('textarea').first()
-      await activePage.getByRole('button', { name: 'Commands' }).click()
-      const menu = activePage.getByRole('listbox', { name: 'Trigger suggestions' })
-      await menu.waitFor({ timeout: 10_000 })
-      await menu.getByRole('option', { name: 'plan Enter or leave plan mode' }).click()
-      await expect.poll(() => input.inputValue()).toBe('/plan ')
-      await input.press('Enter')
+      const offButton = activePage.getByRole('button', { name: 'Plan mode off, press to turn on' })
+      await offButton.waitFor({ timeout: 10_000 })
+      await offButton.click()
       const planButton = activePage.getByRole('button', { name: 'Plan mode on, press to turn off' })
       await planButton.waitFor({ timeout: 10_000 })
-      // The golden encodes an empty composer, and the button arriving does not
-      // mean the submitted text is gone yet: under load the capture can catch
-      // a textbox still holding `/plan`.
+      // The golden encodes an empty composer; the entry chip submits no text.
       await expect.poll(() => input.inputValue(), { timeout: 10_000 }).toBe('')
+      // Clicking the entry chip leaves the pointer over the active chip; move
+      // it away so the style probe reads the resting warn state, not :hover.
+      await activePage.mouse.move(0, 0)
       const planSnapshot = await captureStableAria(activePage, '[class*="frame"]', activeScaffold.workspaceCwd)
       await compareOrRefreshGolden(PLAN_ACTIVE_EXPECTED, planSnapshot, MODE)
       const planStyle = await planButton.evaluate((element) => {

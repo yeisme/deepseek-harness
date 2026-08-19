@@ -4,6 +4,25 @@
 
 本参考定义 profile 启动、web 别名、插件管理和配置 dump 等命令模式。argv 由 [`src/args.ts`](../src/args.ts) 统一解析一次，[`src/bin.ts`](../src/bin.ts) 只会动态导入选中的运行器。
 
+## TUI 模式
+
+`dsh tui` 启动内置的、与渲染器无关的终端 shell。`dsh --profile tui` 是兼容写法，
+会解析到同一模式；已安装的 `omdsh` bin 会在解析前归一化为 `dsh tui`。当前首个
+可运行的 service adapter 通过 `--demo` 明确启用进程内回环服务；它不会读取
+provider 凭据，也不会调用模型。后续真正的 service-backed adapter 可以替换这个
+端口，而不改变 TUI state contract。
+
+```sh
+dsh tui --demo
+omdsh --demo
+omdsh --demo --once "hello"
+```
+
+`--once` 打印一个确定性的语义 frame，是非 TTY smoke 路径。交互式 TTY 使用
+`Enter` 发送，`Ctrl+C` 中断或在空闲时退出，`Ctrl+G` 分离视图；composer 命令包括
+`:help`、`:mode queue|steer`、`:clear`、`:reattach` 和 `:q`。为保持前向兼容，
+`--patch` 会被解析，但在 service-backed adapter 接管 overlay 应用之前会拒绝执行。
+
 ## Profile 启动
 
 `dsh --profile <name>` 启动位于 `$DSH_HOME/profiles/<name>` 的 profile。生效配置树以空根节点为起点，依次叠加 profile manifest（元数据清单）的 `dsh.profile.bundles` 列表中指定的各组合包 patch、profile 自身的 `cordis.patch.yml`、home 级的 `$DSH_HOME/cordis.patch.yml`（这是各 profile 共享的机器本地偏好，因此优先于逐 profile 配置层），以及按 argv 顺序指定的各个 `--patch <path>` 覆盖层。对同一配置行，后应用的层优先。patch 会替换目标行的整个 `config` 值，而不是深度合并其中的键；patch 也可以插入新行。配置解析、schema 校验、模块解析或插件启动失败时，系统会报告错误并以非零状态退出。收到 SIGINT 或 SIGTERM 时，挂载的根节点会先 dispose（资源释放）再退出。

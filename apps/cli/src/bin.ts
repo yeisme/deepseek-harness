@@ -9,9 +9,10 @@
 /* v8 ignore file -- built-bin acceptance exercises this self-executing dispatch. */
 
 import { readFileSync } from 'node:fs'
+import { basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadLayeredEnv } from '@deepseek-ai/dsh-app-boot'
-import { parseDshArgs } from './args.ts'
+import { normalizeDshArgv, parseDshArgs } from './args.ts'
 
 // Both the source tree (apps/cli/src) and the bundled bin (apps/cli/lib) sit
 // one directory under apps/cli, so the checked-in manifest resolves with the
@@ -24,7 +25,8 @@ function readVersion(): string {
   return typeof manifest.version === 'string' ? manifest.version : '0.0.0'
 }
 
-const invocation = parseDshArgs(process.argv.slice(2), readVersion())
+const executableName = process.env.DSH_EXECUTABLE_NAME ?? basename(process.argv[1] ?? 'dsh')
+const invocation = parseDshArgs(normalizeDshArgv(process.argv.slice(2), executableName), readVersion())
 
 switch (invocation.mode) {
   case 'profile': {
@@ -37,9 +39,24 @@ switch (invocation.mode) {
     })
     break
   }
+  case 'tui': {
+    const { runTui } = await import('./tui.ts')
+    process.exitCode = await runTui({ args: invocation.args, patches: invocation.patches })
+    break
+  }
   case 'plugin': {
     const { runPlugin } = await import('./plugin.ts')
     process.exit(runPlugin(invocation.profile, invocation.args))
+    break
+  }
+  case 'plugin-manifest': {
+    const { runPluginManifest } = await import('./plugin-manifest.ts')
+    process.exit(runPluginManifest(invocation))
+    break
+  }
+  case 'composition': {
+    const { runComposition } = await import('./composition.ts')
+    process.exit(await runComposition(invocation))
     break
   }
   case 'dump-config': {
