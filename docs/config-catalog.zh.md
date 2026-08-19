@@ -407,12 +407,133 @@ export interface ConnectionConfig {
    * that is not a bare, canonical authority fails the plugin load.
    */
   trustedHosts?: string[]
+  /**
+   * Optional server-side enterprise access-ticket gate. When omitted, the
+   * shipped local Web mode retains its existing Host/Origin fence only. The
+   * injected verifier receives opaque ticket values; it is not an OAuth or
+   * provider-token parser and must not make provider calls from this process.
+   */
+  accessTicket?: AccessTicketConfig
   /** Maximum buffered JSON body for every `/api` request. */
   maxRequestBodyBytes?: number
 }
+
+/** Explicit opt-in configuration for the enterprise access-ticket canary. */
+export interface AccessTicketConfig {
+  /** Expected token audience for this DSH web deployment. */
+  readonly audience: string
+  /** Request header carrying the opaque ticket. Defaults to `x-dsh-access-ticket`. */
+  readonly header?: string
+  /**
+   * Cookie carrying the opaque ticket when no configured header is present.
+   * Defaults to `__Host-dsh-access-ticket`; the upstream control plane owns
+   * its Secure, HttpOnly, SameSite, and Path attributes.
+   */
+  readonly cookieName?: string
+  /** Enterprise control-plane verifier supplied by the host composition. */
+  readonly verifier: AccessTicketVerifier
+}
+
+/** Server-side authority that verifies opaque access tickets without provider calls in the DSH process. */
+export interface AccessTicketVerifier {
+  /**
+   * Verify one opaque ticket and return its authoritative immutable binding.
+   * The implementation owns signature checks, revocation, and distributed
+   * replay prevention; the DSH transport only validates and correlates its
+   * returned binding.
+   * @param request - Opaque ticket plus the carrier facts it must bind.
+   * @returns accepted binding or an indistinguishable denial.
+   */
+  verify(request: AccessTicketVerificationRequest): Promise<AccessTicketVerificationResult>
+}
+
+/** The transport facts presented to an enterprise access-ticket verifier. */
+export interface AccessTicketVerificationRequest {
+  /** Opaque ticket value, never parsed or logged by this package. */
+  readonly ticket: string
+  /** Fixed enterprise Web transport profile understood by this package. */
+  readonly transportProfile: 'dsh_web_v1'
+  /** Exact DSH Web carrier. Generic WebSocket upgrades are never authorized. */
+  readonly carrier: 'http' | 'events.mux' | 'events.host'
+  /** Exact request pathname below the host web server. */
+  readonly path: string
+  /** HTTP method used by the carrier. */
+  readonly method: string
+  /** Host authority previously accepted by the browser-trust fence. */
+  readonly host: string
+  /** Browser Origin header; enterprise mode requires this exact value. */
+  readonly origin: string
+  /** Abort signal that ends when the HTTP peer disconnects where available. */
+  readonly signal: AbortSignal | undefined
+}
+
+/** Result returned by an enterprise access-ticket verifier. */
+export type AccessTicketVerificationResult =
+  | {
+    /** Accepted verification marker. */
+    readonly ok: true
+    /** Authoritative immutable binding returned by the verifier. */
+    readonly binding: AccessTicketBinding
+  }
+  | {
+    /** Indistinguishable denial marker that reveals no binding detail. */
+    readonly ok: false
+  }
+
+/** The immutable scope that an accepted ticket binds to one browser connection. */
+export interface AccessTicketBinding {
+  /** Session that owns the request. */
+  readonly sid: AccessTicketSessionId
+  /** Authenticated human or service principal. */
+  readonly principal: AccessTicketPrincipalId
+  /** Tenant selected by the authoritative identity service. */
+  readonly tenant: AccessTicketTenantId
+  /** Workspace selected by the authoritative control plane. */
+  readonly workspace: AccessTicketWorkspaceId
+  /** Runtime installation selected by the authoritative control plane. */
+  readonly runtimeRef: AccessTicketRuntimeRef
+  /** Runtime generation that the ticket was minted for. */
+  readonly runtimeGeneration: AccessTicketRuntimeGeneration
+  /** Browser connection generation shared by the HTTP and both downlink paths. */
+  readonly connectionGeneration: AccessTicketConnectionGeneration
+  /** Exact audience expected by this deployment. */
+  readonly audience: string
+  /** Exact browser origin for this connection. */
+  readonly origin: string
+  /** Unix epoch milliseconds after which the ticket is not accepted. */
+  readonly expiresAt: number
+  /** Replay identifier whose uniqueness/revocation is owned by the verifier. */
+  readonly jti: AccessTicketJti
+}
+
+/** Opaque session identifier asserted by an enterprise access-ticket authority. */
+export type AccessTicketSessionId = Branded<'DshAccessTicketSessionId'>
+
+/** Opaque principal identifier asserted by an enterprise access-ticket authority. */
+export type AccessTicketPrincipalId = Branded<'DshAccessTicketPrincipalId'>
+
+/** Opaque tenant identifier asserted by an enterprise access-ticket authority. */
+export type AccessTicketTenantId = Branded<'DshAccessTicketTenantId'>
+
+/** Opaque workspace identifier asserted by an enterprise access-ticket authority. */
+export type AccessTicketWorkspaceId = Branded<'DshAccessTicketWorkspaceId'>
+
+/** Opaque runtime reference asserted by an enterprise access-ticket authority. */
+export type AccessTicketRuntimeRef = Branded<'DshAccessTicketRuntimeRef'>
+
+/** Opaque runtime generation asserted by an enterprise access-ticket authority. */
+export type AccessTicketRuntimeGeneration = Branded<'DshAccessTicketRuntimeGeneration'>
+
+/** Opaque browser-connection generation asserted by an enterprise access-ticket authority. */
+export type AccessTicketConnectionGeneration = Branded<'DshAccessTicketConnectionGeneration'>
+
+/** Opaque access-ticket replay identifier asserted by an enterprise access-ticket authority. */
+export type AccessTicketJti = Branded<'DshAccessTicketJti'>
 ```
 
-来源：[`packages/client/connection/src/index.ts:50`](../packages/client/connection/src/index.ts)
+Depends on: [`Branded`](../packages/util/brand/src/index.ts)
+
+来源：[`packages/client/connection/src/index.ts:66`](../packages/client/connection/src/index.ts)
 
 <a id="deepseek-aidsh-client-hmr"></a>
 
@@ -922,6 +1043,8 @@ export interface PiAiProviderProfile {
    * no protocol at all; a route the catalog does not ship must name one.
    */
   api?: string
+  /** Authentication header mode for the harness-resolved credential. */
+  authMode?: 'api-key' | 'bearer'
   /** Endpoint for this route's models; defaults to the installed catalog's endpoint. */
   baseURL?: string
   /**

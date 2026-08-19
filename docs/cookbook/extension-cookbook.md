@@ -124,6 +124,7 @@ Every product feature maps to a listener on a documented extension point — the
 | Scheduled tasks (cron) | a plugin registers model-callable scheduling tools; timer fires → `followup(…, {source: {kind: 'cron', …}})` when idle / `inject()` notification when busy |
 | UI (GUI; CLI emits JSONL) | listen `session/event` (assistant chunks, boundaries, tool activity); input → `followup()` |
 | Web Client Chat business node | register a `ConversationNodeDefinition` and `conversation.chat.node` keyed renderer |
+| Ordo Agent Ops panel | tenant-bound host service + snapshot/event cursor + reviewed `dsh.client` panel; use ToolView for one action and Workbench for the full operational view (guide moved with the plugin to `agent/harness-plugins`) |
 | SessionTelemetryBackend / replayable trace | `session/event` → JSONL; replay = `sessions.create(id, { seed })` |
 | Model adapters | `LlmAdapter` subclass via `registerAdapter` (`dsh-llm-deepseek`, `dsh-llm-pi-ai`) |
 | Plugin hot-reload | every registration is a `ctx.effect` → vendored HMR just works |

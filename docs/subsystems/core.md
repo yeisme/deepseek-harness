@@ -544,11 +544,25 @@ async recompose(agentCtx: Context, id: string): Promise<AgentPreset>
  * @throws when the preset is unknown or its composition is unusable.
  */
 async standingKeyFor(id?: string): Promise<ScopeKey>
+
+/**
+ * The standing mount's read-side identity: its scope key, the composition
+ * file stamp of the mounted generation, and how many generations this
+ * process has mounted for the id.
+ *
+ * The one derivation behind {@link standingKeyFor}, so a caller proving a
+ * mount (a composition preview) and a caller only addressing registry views
+ * can never disagree about which mount answered.
+ * @param id - the preset id, or `undefined` for {@link defaultId}.
+ * @returns the mount's scope key, file stamp, and generation.
+ * @throws when the preset is unknown or its composition is unusable.
+ */
+async standingFactsFor(id?: string): Promise<PresetStandingFacts>
 ```
 
 Types: [ScopeKey](scope.md)
 
-Source: [`packages/preset/agent-presets/src/index.ts:82`](../../packages/preset/agent-presets/src/index.ts)
+Source: [`packages/preset/agent-presets/src/index.ts:86`](../../packages/preset/agent-presets/src/index.ts)
 
 <a id="ctxagents--agentregistry"></a>
 

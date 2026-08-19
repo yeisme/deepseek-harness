@@ -145,6 +145,19 @@ tools(provider: (context: AssembleContext) => ToolProviderResult): () => void
 variable(name: string, provider: (context: AssembleContext) => string | undefined): () => void
 
 /**
+ * Attribute each effective section name to the layer that supplied it.
+ *
+ * Keyed exactly like an assembly's resolved sections: one entry per name
+ * the scope's assembly would carry, with the nearest supplying layer named
+ * as the origin — the same nearest-wins rule the assembly's shadow merge
+ * applies. A host reader with no agent passes a standing scope key (an
+ * agent preset's mount), the same addressing cold transcript reads use.
+ * @param scope - the viewing scope, or undefined for the global view.
+ * @returns effective section names mapped to their supplying layer.
+ */
+sectionSources(scope?: ScopeKey): ReadonlyMap<string, SectionOrigin>
+
+/**
  * Assemble global and scoped providers, detach tool parameters, apply
  * canonical ordering, then run the assembly waterfall. Scoped sections and
  * variables shadow globals. The returned waterfall value is authoritative
@@ -156,7 +169,9 @@ variable(name: string, provider: (context: AssembleContext) => string | undefine
 async assemble(context: AssembleContext = {}): Promise<PromptAssembly>
 ```
 
-Source: [`packages/core/system-prompt/src/index.ts:338`](../../packages/core/system-prompt/src/index.ts)
+Types: [ScopeKey](scope.md)
+
+Source: [`packages/core/system-prompt/src/index.ts:344`](../../packages/core/system-prompt/src/index.ts)
 
 <a id="system-prompt-events"></a>
 

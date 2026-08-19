@@ -168,6 +168,17 @@ Source: [`packages/session/session-projection-cache/src/index.ts:71`](../../pack
 register<K extends keyof SessionProjectionMap, S>(definition: ProjectionDefinition<K, S>): () => void
 
 /**
+ * Attribute every live unit key to the scopes that registered it.
+ *
+ * A detached point-in-time copy: a key maps to the set of registration
+ * scopes holding it, where an absent scope means a context-global
+ * registrant. Read-side callers (a composition preview naming the units a
+ * preset contributes) compare the set against their own scope key.
+ * @returns unit keys mapped to their live registration scopes.
+ */
+attributions(): ReadonlyMap<string, ReadonlySet<ScopeKey | undefined>>
+
+/**
  * Subscribe to the change feed. The registration is an effect on the
  * calling context's fiber.
  * @param listener - called once per unit whose state reference changed, per committed event.
@@ -256,7 +267,7 @@ viewCheckpoint(checkpoint: ProjectionCheckpoint): Partial<SessionProjectionMap>
 restore(checkpoint: ProjectionCheckpoint, events: readonly SessionEvent[], baseSeq: number): { snapshot: ProjectionSnapshot; checkpoint: ProjectionCheckpoint }
 ```
 
-Types: [Session](session.md) · [SessionEvent](session.md)
+Types: [ScopeKey](scope.md) · [Session](session.md) · [SessionEvent](session.md)
 
-Source: [`packages/session/session-projection/src/index.ts:171`](../../packages/session/session-projection/src/index.ts)
+Source: [`packages/session/session-projection/src/index.ts:175`](../../packages/session/session-projection/src/index.ts)
 <!-- END GENERATED cordis-surface -->

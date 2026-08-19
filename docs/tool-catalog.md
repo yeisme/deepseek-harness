@@ -17,7 +17,8 @@ This table connects model-visible tool names to the plugin package and service s
 | --- | --- | --- | --- | --- | --- |
 | `@deepseek-ai/dsh-tool-ask-user` | `ask_user_question` | `ctx.tools`, `ctx.userQuestions` | `tool/call`, `tool/result after a UI/provider answers the question` | - | ask_user_question pauses the tool call until the active UI provider returns a human answer. |
 | `@deepseek-ai/dsh-tools` | `run_code` | `ctx.tools`, `ctx.codeRuntime (execution time)`, `ctx.systemPrompt` | `tool/call`, `one tool/code-dispatch-start + tool/code-dispatch pair per bridged sub-call`, `tool/result` | - | Owned by the tool registry as a reserved transport outside filterable capability layers under `mode: code` / `mode: both` (see the Code Mode Agent Note). Under `code` it is the registry's only wire contribution; the other visible capabilities are declared in a generated SDK section in the loaded runtime's language, and a program calls them through bindings scheduled under the native concurrency contract (submission-ordered starts and policy; concurrency-safe bodies overlap up to `maxParallelSubCalls`) that re-enter the complete guarded tool pipeline and link each nested execution to this outer result. |
-| `@deepseek-ai/dsh-plan-mode` | `exit_plan_mode` | `ctx.tools`, `ctx.systemPrompt`, `ctx.userQuestions (execution time, opportunistic)` | `tool/call`, `plan/mode inactive on an approved review`, `tool/result` | - | exit_plan_mode stays in the model-facing schema while planning is inactive so transitions add no tool-catalog churn on top of the plan-policy change. Its execute path rejects calls outside plan mode; in plan mode it presents the plan over the user-questions seam (approve / keep planning with feedback), and approval logs plan mode inactive at the step boundary. |
+| `@deepseek-ai/dsh-plan-mode` | `exit_plan_mode`, `plan_complete`, `plan_form` | `ctx.tools`, `ctx.systemPrompt`, `ctx.userQuestions (execution time, opportunistic)` | `tool/call`, `plan/mode inactive on an approved review`, `tool/result` | - | exit_plan_mode stays in the model-facing schema while planning is inactive so transitions add no tool-catalog churn on top of the plan-policy change. Its execute path rejects calls outside plan mode; in plan mode it presents the plan over the user-questions seam (approve / keep planning with feedback), and approval logs plan mode inactive at the step boundary. |
+| `@deepseek-ai/dsh-plan-spec` | `spec_read`, `spec_write` | `ctx.tools`, `ctx.session`, `ctx.planMode (execution time, approved/executing check)` | `spec/document` | - | spec_write persists a spec document under an approved/executing plan; spec_read returns the latest spec or a plan-grouped list. |
 | `@deepseek-ai/dsh-tool-bash` | `bash` | `ctx.tools`, `ctx.shell`, `ctx.systemPrompt`, `ctx.shellEnv`, `ctx.jobs at call time for run_in_background` | `tool/call`, `tool/result` | - | The bash tool is the model-facing consumer of the bash executor seam. A `run_in_background` run registers with the generic `ctx.jobs` runtime and is collected/stopped through the `job_*` tools from `@deepseek-ai/dsh-tool-jobs`; the `enableRunInBackground` config (default true) removes the parameter entirely when disabled. |
 | `@deepseek-ai/dsh-tool-pwsh` | `pwsh` | `ctx.tools`, `ctx.shell`, `ctx.systemPrompt`, `ctx.shellEnv`, `ctx.jobs at call time for run_in_background` | `tool/call`, `tool/result` | - | The pwsh tool is the PowerShell-dialect consumer of the bash executor seam for Windows compositions (a PowerShell executor such as `@deepseek-ai/dsh-pwsh-local` backs `ctx.shell`); it mirrors the bash tool call-for-call minus sandbox controls — `run_in_background` runs register with the generic `ctx.jobs` runtime and are collected/stopped through the `job_*` tools, and the managed `DSH_*` environment comes from `@deepseek-ai/dsh-shell-env`. Each call runs in a fresh process (no persistent PTY session), with native `C:\...` paths and `$env:NAME` variables. |
 | `@deepseek-ai/dsh-tool-cordis` | `cordis_define`, `cordis_inspect_list`, `cordis_inspect_query`, `cordis_inspect_self`, `cordis_run`, `cordis_stop`, `cordis_undefine` | `ctx.tools`, `ctx.dynamicCordisRunner` | `tool/call`, `tool/result`, `process-local dynamic package lifecycle` | - | Not in any shipped tree (a deliberate opt-in — dynamic package code reaches the real runtime, see .agents/notes/implemented/feature/2026-07-08-self-referential-cordis-toolset.md). The toolset injects `ctx.dynamicCordisRunner` from `@deepseek-ai/dsh-cordis-host-runner`, which owns the definition registry and the vm sandbox; a composition missing it never activates the tools. A running package may register ADDITIONAL model-visible tools until it is stopped, undefined, or DSH restarts; a full changed request header logs those tool-set changes. |
@@ -171,7 +172,170 @@ Use only in plan mode. Present your plan for the user's review and, on approval,
 
 Source: [`packages/plan/plan-mode/src/index.ts`](../packages/plan/plan-mode/src/index.ts)
 
+### `plan_complete`
+
+Mark the currently executing plan as completed. Use only after the approved plan has been fully carried out.
+
+```json
+{
+  "type": "object",
+  "properties": {}
+}
+```
+
+Source: [`packages/plan/plan-mode/src/index.ts`](../packages/plan/plan-mode/src/index.ts)
+
+### `plan_form`
+
+Use only in plan mode. Ask the user a structured planning form before drafting or revising a plan. Send one or more questions in a single form; prefer grouped, decision-relevant questions over repeated small prompts. The answers come back as structured text for the next step.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "questions": {
+      "type": "array",
+      "description": "Questions to ask the user before continuing the plan.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable id for this question; echoed in the answer."
+          },
+          "question": {
+            "type": "string",
+            "description": "The specific question to ask the user."
+          },
+          "header": {
+            "type": "string",
+            "description": "Optional short heading for the question."
+          },
+          "detail": {
+            "type": "string",
+            "description": "Optional supporting detail rendered with the question."
+          },
+          "options": {
+            "type": "array",
+            "description": "Optional choices to show the user.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "description": "Short user-facing option label."
+                },
+                "description": {
+                  "type": "string",
+                  "description": "One sentence explaining the tradeoff or impact."
+                }
+              },
+              "required": [
+                "label"
+              ]
+            }
+          },
+          "multi_select": {
+            "type": "boolean",
+            "description": "Whether the user may select more than one option. Defaults to false."
+          }
+        },
+        "required": [
+          "id",
+          "question"
+        ]
+      }
+    },
+    "header": {
+      "type": "string",
+      "description": "Optional form title; defaults to \"Planning form\"."
+    }
+  },
+  "required": [
+    "questions"
+  ]
+}
+```
+
+Source: [`packages/plan/plan-mode/src/index.ts`](../packages/plan/plan-mode/src/index.ts)
+
 exit_plan_mode stays in the model-facing schema while planning is inactive so transitions add no tool-catalog churn on top of the plan-policy change. Its execute path rejects calls outside plan mode; in plan mode it presents the plan over the user-questions seam (approve / keep planning with feedback), and approval logs plan mode inactive at the step boundary.
+
+<a id="deepseek-aidsh-plan-spec"></a>
+
+## `@deepseek-ai/dsh-plan-spec`
+
+### `spec_read`
+
+Read the latest spec document(s) for the current plan.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "specId": {
+      "type": "string"
+    },
+    "planId": {
+      "type": "string"
+    }
+  }
+}
+```
+
+Source: [`packages/plan/plan-spec/src/index.ts`](../packages/plan/plan-spec/src/index.ts)
+
+### `spec_write`
+
+Write or revise a spec document for the current approved/executing plan.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "specId": {
+      "type": "string"
+    },
+    "planId": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "superseded"
+      ]
+    },
+    "basisPlanRevision": {
+      "type": "number"
+    },
+    "basisSpecVersions": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "specId",
+    "planId",
+    "title",
+    "content",
+    "basisPlanRevision"
+  ]
+}
+```
+
+Source: [`packages/plan/plan-spec/src/index.ts`](../packages/plan/plan-spec/src/index.ts)
+
+spec_write persists a spec document under an approved/executing plan; spec_read returns the latest spec or a plan-grouped list.
 
 <a id="deepseek-aidsh-tool-bash"></a>
 

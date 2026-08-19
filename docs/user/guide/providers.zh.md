@@ -18,6 +18,8 @@
 
 使用原生认证的提供方需要各自的原生凭据。Bedrock、Vertex、Azure 和 Codex 分别使用 AWS 凭据与区域、ADC 项目、`api-version` 和 OAuth；只填写 API 密钥字段无法完成配置。
 
+Web profile 内置三条编程模型路由：OpenAI Codex 的 `gpt-5.6-luna`、通过 Claude Code 使用的 Anthropic 兼容端点提供的 GLM-5.2，以及 Kimi Code 的 `k3`。在模型卡片中填写对应的 API token。路由引用分别是 `OPENAI_API_KEY`、`ANTHROPIC_AUTH_TOKEN` 和 `KIMI_API_KEY`；DSH 不会导入 CLI 的 OAuth 文件。
+
 ## 添加自定义提供方
 
 对于公司网关、自建服务器或已安装目录中不存在的提供方，选择**添加自定义提供方**。提供小写 Provider ID、基础 URL、API 协议、凭据和至少一个模型。

@@ -544,6 +544,19 @@ get(name: string, scope?: ScopeKey): ToolDefinition | undefined
 schemas(scope?: ScopeKey): ToolSchema[]
 
 /**
+ * Attribute each visible tool name to the registry layer that supplied it.
+ *
+ * Keyed exactly like {@link schemas}: one entry per visible tool, so a
+ * reader composing the two answers one composition fact — what the scope
+ * sees AND which layer it came from. A host reader with no agent passes a
+ * standing scope key (an agent preset's mount), the same addressing cold
+ * transcript reads use.
+ * @param scope - the viewing scope (the agent), or undefined for the global view.
+ * @returns visible tool names mapped to their supplying layer.
+ */
+sources(scope?: ScopeKey): ReadonlyMap<string, ToolOrigin>
+
+/**
  * Classify a pending call through the caller's visible tool definition. Only
  * an exact `true` is parallel; unknown, hidden, undeclared, invalid, or
  * throwing classifiers are exclusive.
@@ -571,7 +584,7 @@ async execute(exec: ToolExecutionInput): Promise<ToolExecutionResult>
 
 Types: [ScopeKey](scope.md)
 
-Source: [`packages/core/tools/src/index.ts:787`](../../packages/core/tools/src/index.ts)
+Source: [`packages/core/tools/src/index.ts:822`](../../packages/core/tools/src/index.ts)
 
 <a id="tools-events"></a>
 
