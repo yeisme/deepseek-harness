@@ -1,0 +1,6 @@
+# Shipped preset under projection: one tool row, one prompt section, one
+# projection unit, all contributed by the standing mount this package projects.
+- id: alpha
+  name: ../../plugins/contribute.js
+  config:
+    tool: alpha

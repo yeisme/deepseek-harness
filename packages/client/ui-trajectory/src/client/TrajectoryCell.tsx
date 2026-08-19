@@ -5,6 +5,7 @@ import {
   type TrajectoryCellKind,
   type TrajectoryCellProps,
 } from './trajectory-record.ts'
+import { trajectoryCellCategory } from './trajectory-filter.ts'
 import css from './TrajectoryCell.module.css'
 
 export { formatElapsedSeconds }
@@ -55,6 +56,7 @@ export function TrajectoryCell({
   assistantMetrics: _assistantMetrics,
   result: _result,
   callId: _callId,
+  toolName: _toolName,
   isError: _isError,
   timeSeconds,
   startedAt: _startedAt,
@@ -71,8 +73,23 @@ export function TrajectoryCell({
     className,
   ].filter((c): c is string => c !== undefined).join(' ')
   const showMetrics = kind === 'message'
+  const category = trajectoryCellCategory({
+    index,
+    kind,
+    text,
+    timeSeconds,
+    ...(_thinkingDetail === undefined ? {} : { thinkingDetail: _thinkingDetail }),
+    ...(_sourceBlocks === undefined ? {} : { sourceBlocks: _sourceBlocks }),
+    ...(_toolName === undefined ? {} : { toolName: _toolName }),
+  } satisfies TrajectoryCellProps)
   return (
-    <div className={rootClass} data-kind={kind} data-selected={selected || undefined} {...rest}>
+    <div
+      className={rootClass}
+      data-kind={kind}
+      data-category={category ?? undefined}
+      data-selected={selected || undefined}
+      {...rest}
+    >
       <span className={css.index}>#{index}</span>
       <span className={css.tagSlot}>
         <span className={[css.tag, TAG_CLASS[kind]].filter((c): c is string => c !== undefined).join(' ')}>{KIND_LABEL[kind]}</span>

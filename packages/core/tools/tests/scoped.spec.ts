@@ -115,6 +115,41 @@ describe('scoped tool registration', () => {
     expect(ctx.tools.get('mine', key)).toBeUndefined()
     expect(ctx.tools.schemas(key)).toEqual([])
   })
+
+  it('attributes each visible name to the layer that supplied it', async () => {
+    const ctx = await mount()
+    const { scope, key } = await mintAgentScope(ctx, 'a')
+    ctx.tools.register(tool('shared'))
+    scope.ctx.tools.register(tool('mine'))
+    // A scoped registration shadowing a global reads as scoped, not doubled.
+    scope.ctx.tools.register(tool('shadow'))
+    ctx.tools.register(tool('shadow'))
+
+    expect(Object.fromEntries(ctx.tools.sources(key))).toEqual({
+      shared: 'global',
+      mine: 'scoped',
+      shadow: 'scoped',
+    })
+    expect(Object.fromEntries(ctx.tools.sources())).toEqual({ shared: 'global', shadow: 'global' })
+    // Keyed exactly like schemas(): one origin per visible name.
+    expect([...ctx.tools.sources(key).keys()].sort())
+      .toEqual(ctx.tools.schemas(key).map(schema => schema.name).sort())
+
+    await scope.dispose()
+    expect(Object.fromEntries(ctx.tools.sources(key))).toEqual({ shared: 'global', shadow: 'global' })
+  })
+
+  it('attributes the code-mode transport as transport, never as a layer', async () => {
+    const ctx = await mount()
+    const { scope, key } = await mintAgentScope(ctx, 'code')
+    scope.ctx.tools.presentAs('code')
+    scope.ctx.tools.register(tool('mine'))
+
+    // `run_code` is inserted by the visibility resolver, not registered, so
+    // its origin names the transport rather than a layer.
+    expect(ctx.tools.sources(key).get('run_code')).toBe('transport')
+    expect(ctx.tools.sources(key).get('mine')).toBe('scoped')
+  })
 })
 
 describe('restrict()', () => {

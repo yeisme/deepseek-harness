@@ -9,6 +9,7 @@ Session-projection Service Definition and drive registry. It owns `ctx.sessionPr
 ### Public API
 
 - `ctx.sessionProjections.register(definition): () => void` Register one domain's unit. Duplicate keys and invalid `stateVersion` throw; the registration is an effect on the calling fiber, so an unloaded domain plugin's key (with its cached cells) disappears from subsequent drives and snapshots — clients read that as capability absence.
+- `ctx.sessionProjections.attributions(): ReadonlyMap<string, ReadonlySet<ScopeKey | undefined>>` Attribution of every live unit key to the scopes that registered it (an absent scope means a context-global registrant). Read-side callers (a composition preview) compare the set against their own scope key to name the units one composition contributes without observing registrations as they happen.
 - `ctx.sessionProjections.onChanged(listener): () => void` Subscribe to the change feed: one call per unit whose state reference changed, per committed event, carrying the schema-validated view and the causing seq. Effect-tied like `register`.
 - `ctx.sessionProjections.snapshot(session): ProjectionSnapshot` One consistent synchronous cut over every registered unit — `{ asOfSeq, values }` with `asOfSeq` = the seq of the last event every value reflects (`-1` for an empty log).
 

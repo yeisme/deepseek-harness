@@ -56,6 +56,92 @@
   background: var(--dsw-alias-state-business-primary);
 }
 
+/* Category tints: reads are green, writes amber, web/MCP carry blue/violet
+   accents, shell rows stay neutral. The shared row chrome keeps one-line
+   geometry; only the header row's background and accent colors change. */
+.root[data-category='read'] .row,
+.root[data-category='write'] .row,
+.root[data-category='web'] .row,
+.root[data-category='mcp'] .row {
+  border-radius: 6px;
+}
+
+.root[data-category='read'] .leading,
+.root[data-category='read'] .title {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.root[data-category='read'] .row {
+  background: color-mix(
+    in srgb,
+    var(--dsw-alias-state-success-primary) 6%,
+    var(--dsw-alias-bg-layer-1)
+  );
+}
+
+.root[data-category='read'] .sep {
+  background: var(--dsw-alias-state-success-primary);
+}
+
+.root[data-category='write'] .leading,
+.root[data-category='write'] .title {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+.root[data-category='write'] .row {
+  background: color-mix(
+    in srgb,
+    var(--dsw-alias-state-warn-primary) 7%,
+    var(--dsw-alias-bg-layer-1)
+  );
+}
+
+.root[data-category='write'] .sep {
+  background: var(--dsw-alias-state-warn-primary);
+}
+
+.root[data-category='web'] .leading,
+.root[data-category='web'] .title {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.root[data-category='web'] .row {
+  background: color-mix(
+    in srgb,
+    var(--dsw-alias-state-business-primary) 7%,
+    var(--dsw-alias-bg-layer-1)
+  );
+}
+
+.root[data-category='web'] .sep {
+  background: var(--dsw-alias-state-business-primary);
+}
+
+.root[data-category='mcp'] .leading,
+.root[data-category='mcp'] .title {
+  color: color-mix(
+    in srgb,
+    var(--dsw-alias-brand-primary-new-colorprimary-new-color) 60%,
+    var(--dsw-alias-state-error-secondary)
+  );
+}
+
+.root[data-category='mcp'] .row {
+  background: color-mix(
+    in srgb,
+    color-mix(
+      in srgb,
+      var(--dsw-alias-brand-primary-new-colorprimary-new-color) 55%,
+      var(--dsw-alias-state-error-secondary)
+    ) 8%,
+    var(--dsw-alias-bg-layer-1)
+  );
+}
+
+.root[data-category='mcp'] .sep {
+  background: var(--dsw-alias-brand-primary-new-colorprimary-new-color);
+}
+
 .chevron {
   color: var(--dsw-alias-label-secondary);
 }

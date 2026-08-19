@@ -78,6 +78,29 @@ describe('scoped sections', () => {
     expect(scopedText).toHaveBeenCalledOnce()
   })
 
+  it('attributes each effective section to the layer that supplied it', async () => {
+    const ctx = await mount()
+    const scope = await mintScope(ctx, 'child')
+    ctx.systemPrompt.section({ name: 'shared', order: 1, text: 'global text' })
+    scope.ctx.systemPrompt.section({ name: 'shared', order: 1, text: 'scoped text' })
+    scope.ctx.systemPrompt.section({ name: 'child:extra', order: 50, text: 'Extra guidance.' })
+    const key = scopeKeyOf(scope)
+
+    // A shadowed name attributes to the layer whose entry the scope resolves.
+    expect(ctx.systemPrompt.sectionSources(key).get('shared')).toBe('scoped')
+    expect(ctx.systemPrompt.sectionSources(key).get('child:extra')).toBe('scoped')
+    expect(ctx.systemPrompt.sectionSources().get('shared')).toBe('global')
+    expect(ctx.systemPrompt.sectionSources().get('child:extra')).toBeUndefined()
+    // Keyed exactly like the assembly the scope resolves.
+    const assembly = await ctx.systemPrompt.assemble({ scope: key })
+    expect([...ctx.systemPrompt.sectionSources(key).keys()].sort())
+      .toEqual(assembly.sections.map(section => section.name).sort())
+
+    await scope.dispose()
+    expect(ctx.systemPrompt.sectionSources(key).get('shared')).toBe('global')
+    expect(ctx.systemPrompt.sectionSources(key).get('child:extra')).toBeUndefined()
+  })
+
 })
 
 describe('scoped variables', () => {

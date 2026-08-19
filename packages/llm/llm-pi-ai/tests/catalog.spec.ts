@@ -398,6 +398,43 @@ describe('hand-declared providers', () => {
   })
 })
 
+describe('coding product catalog routes', () => {
+  it('materializes the Codex, GLM, and Kimi coding models from pi-ai catalogs', () => {
+    const profiles = resolveProfiles({
+      'openai-codex': {
+        displayName: 'OpenAI Codex',
+        apiKeyEnv: 'OPENAI_API_KEY',
+        models: [{ id: 'gpt-5.6-luna' }],
+      },
+      'glm-claude-code': {
+        displayName: 'GLM-5.2 (Claude Code)',
+        apiKeyEnv: 'ANTHROPIC_AUTH_TOKEN',
+        authMode: 'bearer',
+        api: 'anthropic-messages',
+        baseURL: 'https://open.bigmodel.cn/api/anthropic',
+        models: [{ id: 'glm-5.2[1m]', contextWindow: 1_000_000, maxTokens: 131_072 }],
+      },
+      'kimi-coding': {
+        displayName: 'Kimi Code',
+        apiKeyEnv: 'KIMI_API_KEY',
+        models: [{ id: 'k3' }],
+      },
+    })
+
+    expect([...profiles.entries()].map(([provider, profile]) => [
+      provider,
+      profile.piProvider.getModels().map(model => ({ id: model.id, api: model.api })),
+    ])).toEqual([
+      ['openai-codex', [{ id: 'gpt-5.6-luna', api: 'openai-codex-responses' }]],
+      ['glm-claude-code', [{ id: 'glm-5.2[1m]', api: 'anthropic-messages' }]],
+      ['kimi-coding', [{ id: 'k3', api: 'anthropic-messages' }]],
+    ])
+    expect(profiles.get('openai-codex')?.piProvider.auth.apiKey).toBeDefined()
+    expect(profiles.get('glm-claude-code')?.piProvider.auth.apiKey).toBeDefined()
+    expect(profiles.get('kimi-coding')?.piProvider.auth.apiKey).toBeDefined()
+  })
+})
+
 describe('catalog routes with per-model configuration', () => {
   it('serves the installed catalog untouched when the profile lists no models', async () => {
     const server = await mockServer([])

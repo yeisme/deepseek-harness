@@ -1,9 +1,9 @@
 /**
  * ui-plan browser half on a real SlotRegistry: the plugin occupies the
  * conversation-declared `conversation.input.plan` single seat with the active
- * plan status chip; the injected face executes /plan off and folds admission
- * outcomes into null (admitted) or a user-visible failure line; teardown
- * empties the seat (HMR safety).
+ * plan status chip and inactive entry chip; the injected face executes /plan
+ * and /plan off and folds admission outcomes into null (admitted) or a
+ * user-visible failure line; teardown empties the seat (HMR safety).
  */
 import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it, vi } from 'vitest'
@@ -59,7 +59,7 @@ describe('ui-plan browser apply', () => {
     expect(ctx.slots.entries('conversation.input.plan')).toHaveLength(1)
   })
 
-  it('registers the chip, executes /plan off, and unregisters on teardown', async () => {
+  it('registers the chip, executes /plan and /plan off, and unregisters on teardown', async () => {
     const b = await bench()
     const fiber = b.ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
@@ -67,6 +67,8 @@ describe('ui-plan browser apply', () => {
     expect(entry.component).toBe(PlanChip)
     const injected = (entry.inject as unknown as (id: SessionId) => PlanChipInjected)(SID)
 
+    await expect(injected.enterPlanMode()).resolves.toBeNull()
+    expect(b.execute).toHaveBeenLastCalledWith(SID, '/plan')
     await expect(injected.exitPlanMode()).resolves.toBeNull()
     expect(b.execute).toHaveBeenLastCalledWith(SID, '/plan off')
 
@@ -76,9 +78,16 @@ describe('ui-plan browser apply', () => {
       ok: false,
       error: { code: 'session-not-found', message: 'gone', details: {} },
     } as never)
+    await expect(injected.enterPlanMode()).resolves.toBe('gone (session-not-found)')
+    b.execute.mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'session-not-found', message: 'gone', details: {} },
+    } as never)
     await expect(injected.exitPlanMode()).resolves.toBe('gone (session-not-found)')
 
     // Unmatched admission (plan-mode not composed host-side) is also a failure line.
+    b.execute.mockResolvedValueOnce({ ok: true, value: undefined } as never)
+    await expect(injected.enterPlanMode()).resolves.toBe('unknown command: /plan')
     b.execute.mockResolvedValueOnce({ ok: true, value: undefined } as never)
     await expect(injected.exitPlanMode()).resolves.toBe('unknown command: /plan off')
 

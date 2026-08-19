@@ -6,6 +6,12 @@
 .row {
   position: relative;
   overflow: hidden;
+  border-radius: 6px;
+  background: color-mix(
+    in srgb,
+    var(--dsw-alias-state-business-primary) 7%,
+    var(--dsw-alias-bg-layer-1)
+  );
 }
 
 .root[data-state='running'] .row::after {
@@ -33,12 +39,21 @@
   flex-shrink: 0;
 }
 
+.leading,
+.title {
+  color: color-mix(
+    in srgb,
+    var(--dsw-alias-state-business-primary) 78%,
+    var(--dsw-alias-label-primary)
+  );
+}
+
 .chevron {
   color: var(--dsw-alias-label-secondary);
 }
 
 .title {
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .separator {

@@ -20,6 +20,7 @@ import type {
   AssistantMetricDetail, TrajectoryCellKind, TrajectoryCellProps, TrajectorySourceBlock,
 } from './trajectory-record.ts'
 import { formatElapsedSeconds, trajectoryRecordId } from './trajectory-record.ts'
+import { trajectoryCellCategory, type TrajectoryCategory } from './trajectory-filter.ts'
 import {
   groupTrajectoryVirtualRows, trajectoryVirtualRecordKey,
 } from './trajectory-virtual-rows.ts'
@@ -114,6 +115,17 @@ const KIND_ICON: Record<TrajectoryCellKind, ReactNode> = {
   message: <IconSparkle16 size={13} />,
   tool: <ToolWrenchIcon />,
   subtool: <ToolWrenchIcon />,
+}
+
+/** Category-specific tag tint for tool records; `think` is an assistant tag. */
+const CATEGORY_TAG_CLASS: Record<TrajectoryCategory, string> = {
+  think: css.assistantVioletBright!,
+  read: css.categoryRead!,
+  write: css.categoryWrite!,
+  shell: css.categoryShell!,
+  web: css.categoryWeb!,
+  mcp: css.categoryMcp!,
+  tool: css.categoryTool!,
 }
 
 interface TableRecord {
@@ -2314,6 +2326,7 @@ export function TrajectoryTable({
                           : `${request === undefined ? '' : `Request ${request}, `}${KIND_LABEL[record.cell.kind]}, ${listDisplayText || 'no content'}`}
                       aria-selected={!isCollapsedSummary && !isRequestOnly && selectedIndex === record.cell.index}
                       data-kind={record.cell.kind}
+                      data-category={trajectoryCellCategory(record.cell) ?? undefined}
                       data-trajectory-row-key={trajectoryVirtualRecordKey(record)}
                       data-virtual-position={virtualizationEnabled ? position : undefined}
                       data-record-index={!isCollapsedSummary && !isRequestOnly
@@ -2445,13 +2458,11 @@ export function TrajectoryTable({
                                       ? css.contextGreen
                                       : record.cell.kind === 'compacted'
                                         ? css.compacted
-                                        : record.cell.kind === 'tool'
-                                          ? css.toolAmber
+                                        : record.cell.kind === 'tool' || record.cell.kind === 'subtool'
+                                          ? CATEGORY_TAG_CLASS[trajectoryCellCategory(record.cell) ?? 'tool']
                                           : record.cell.kind === 'message'
                                             ? css.assistantVioletBright
-                                            : record.cell.kind === 'subtool'
-                                              ? css.subtoolAmber
-                                              : css[record.cell.kind]
+                                            : css[record.cell.kind]
                                 }`}
                                 data-role-kind={record.cell.kind}
                               >

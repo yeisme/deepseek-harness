@@ -86,7 +86,11 @@ function profileOptions(
 ): SimpleStreamOptions {
   const enabledReasoning: ThinkingLevel | undefined = reasoning === 'off' ? undefined : reasoning
   return {
-    ...apiKey === undefined ? {} : { apiKey },
+    // Bearer routes put the resolved token in the final request headers. Do
+    // not also pass it as pi-ai's apiKey option: Anthropic would then choose
+    // x-api-key authentication even when the endpoint expects Claude Code's
+    // Authorization header.
+    ...apiKey !== undefined && profile.authMode !== 'bearer' ? { apiKey } : {},
     ...enabledReasoning === undefined ? {} : { reasoning: enabledReasoning },
     ...profile.thinkingBudgets === undefined ? {} : { thinkingBudgets: profile.thinkingBudgets },
     ...profile.cacheRetention === undefined ? {} : { cacheRetention: profile.cacheRetention },
@@ -318,7 +322,12 @@ export class PiAiAdapter extends LlmAdapter {
         signal: watchdog.signal,
         // Profile headers are deployment-owned; attribution names are
         // Harness-owned and therefore win collisions.
-        headers: requestHeaders(profile.headers),
+        headers: {
+          ...requestHeaders(profile.headers),
+          ...profile.authMode === 'bearer' && apiKey !== undefined
+            ? { Authorization: `Bearer ${apiKey}` }
+            : {},
+        },
       })
       const iterator = toStreamChunks(events, model.contextWindow)[Symbol.asyncIterator]()
       let exhausted = false

@@ -6,11 +6,27 @@ import type {} from '@deepseek-ai/dsh-attachment'
 import type { WebRoute, WebUpgradeRoute } from '@deepseek-ai/dsh-host-webserver'
 import { toFetchHandler } from '@deepseek-ai/dsh-host-apiproxy'
 import { API_PATH, HOST_EVENTS_PATH, MUX_EVENTS_PATH } from './api-path.ts'
+import { AccessTicketGate, type AccessTicketConfig } from './access-ticket.ts'
 import { bridge, DEFAULT_MAX_REQUEST_BODY_BYTES } from './http-bridge.ts'
 import { assertTrustedAuthority, isTrustedApiRequest } from './api-request-trust.ts'
 import { HostConnectionService } from './rpc-host.ts'
 import { rejectWebSocketUpgrade, WebSocketDownlinks } from './websocket-downlink.ts'
 
+export type {
+  AccessTicketBinding,
+  AccessTicketConfig,
+  AccessTicketConnectionGeneration,
+  AccessTicketJti,
+  AccessTicketPrincipalId,
+  AccessTicketRuntimeGeneration,
+  AccessTicketRuntimeRef,
+  AccessTicketSessionId,
+  AccessTicketTenantId,
+  AccessTicketVerificationRequest,
+  AccessTicketVerificationResult,
+  AccessTicketVerifier,
+  AccessTicketWorkspaceId,
+} from './access-ticket.ts'
 export type {
   ConnectionRpcAuthority,
   ConnectionRpcEndpointMatcher,
@@ -57,12 +73,20 @@ export interface ConnectionConfig {
    * that is not a bare, canonical authority fails the plugin load.
    */
   trustedHosts?: string[]
+  /**
+   * Optional server-side enterprise access-ticket gate. When omitted, the
+   * shipped local Web mode retains its existing Host/Origin fence only. The
+   * injected verifier receives opaque ticket values; it is not an OAuth or
+   * provider-token parser and must not make provider calls from this process.
+   */
+  accessTicket?: AccessTicketConfig
   /** Maximum buffered JSON body for every `/api` request. */
   maxRequestBodyBytes?: number
 }
 
 export const Config: z<ConnectionConfig> = z.object({
   trustedHosts: z.array(String).default([]),
+  accessTicket: z.any(),
   maxRequestBodyBytes: z.natural().min(1).default(DEFAULT_MAX_REQUEST_BODY_BYTES),
 })
 
@@ -131,9 +155,13 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
   // The Loader resolves schema defaults; hand-built test contexts may pass none.
   const trustedHosts = config?.trustedHosts ?? []
   const maxRequestBodyBytes = config?.maxRequestBodyBytes ?? DEFAULT_MAX_REQUEST_BODY_BYTES
+  const accessTicket = config?.accessTicket === undefined ? undefined : new AccessTicketGate(config.accessTicket)
   // Config boundary: a malformed entry fails the load loudly here rather than
   // silently authorizing its hostname prefix at request time.
   for (const entry of trustedHosts) assertTrustedAuthority(entry)
+  if (accessTicket !== undefined) {
+    ctx.effect(() => () => { accessTicket.close() }, 'client-connection: enterprise access-ticket generations')
+  }
   if (ctx.get('apiProxy') !== undefined) assertImageBodyCapacity(ctx, maxRequestBodyBytes)
   const connection = new HostConnectionService(ctx, trustedHosts)
   const fetchHandler = connection.createSharedFetchHandler(API_PATH, {
@@ -167,6 +195,11 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
         res.end('forbidden')
         return
       }
+      if (accessTicket !== undefined && !await accessTicket.authorizeHttp(req)) {
+        res.writeHead(403)
+        res.end('forbidden')
+        return
+      }
       await bridge(req, res, fetchHandler, maxRequestBodyBytes)
     },
   }
@@ -180,11 +213,20 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
     ): void => {
       apiCtx.effect(() => apiCtx.webServer.registerUpgrade({
         path,
-        handler: (req, socket, head) => {
+        handler: async (req, socket, head) => {
           if (!isTrustedApiRequest(req, trustedHosts)) {
             rejectWebSocketUpgrade(socket)
             return
           }
+          const stream = path === MUX_EVENTS_PATH ? 'mux' : 'host'
+          const release = accessTicket === undefined
+            ? undefined
+            : await accessTicket.authorizeWebSocket(req, stream, () => { socket.destroy() })
+          if (accessTicket !== undefined && release === undefined) {
+            rejectWebSocketUpgrade(socket)
+            return
+          }
+          if (release !== undefined) socket.once('close', release)
           return handle(req, socket, head)
         },
       }), `client-connection: ${path} WebSocket`)

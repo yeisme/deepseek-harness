@@ -12,6 +12,14 @@ node 半侧在桥接或 upgrade 前守卫 `/api` 下的每个入口（`src/api-r
 
 `/api/events.mux` 与 `/api/events.host` 各接受一条 WebSocket upgrade，并只向浏览器发送对应的 `ServerRequest` 文本消息；客户端不会在这些 socket 上发送业务数据。任一 socket 结束都会使当前 connection generation 失败并重建两条流，连接就绪仍要求两条 socket 均已打开且 `host.describe` HTTP 调用成功。Host teardown 会终止两条 socket、中止各自的 source，并等待 source 清理完成后再返回。普通网络 GET 这些路径会返回 426，不保留 SSE（Server-Sent Events）回退；`toFetchHandler` 的 SSE 编解码只服务进程内同构载体。
 
+## 企业 access-ticket canary
+
+`ConnectionConfig.accessTicket` 是供企业控制面注入的、仅运行在 Host 侧的 verifier seam。未配置时，本地 `dsh web` 行为不变：Host/Origin 栅栏仍只是可达性保护，并非认证。配置后，`dsh_web_v1` verifier 会收到精确 carrier：`/api` 为 `http`，`/api/events.mux` 为 `events.mux`，`/api/events.host` 为 `events.host`。浏览器信任栅栏通过后，三者都必须携带同一张来自 `x-dsh-access-ticket` 或 `__Host-dsh-access-ticket` cookie 的 opaque ticket；没有任何通用 WebSocket path 被 ticket 授权。DSH 不解析 OAuth/提供方 token，也不调用身份提供方；注入的 verifier 负责单次原子 exchange、签名／撤销／重放存储，并且只返回已限定范围的 claims。
+
+verifier 的控制面 exchange 字段映射为：`SessionID` → `sid`；`OperatorID` → `principal`；`TenantID` → `tenant`；`WorkspaceID` → `workspace`；`RuntimeRef`/`Generation` → `runtimeRef`/`runtimeGeneration`；`Audience`、`Origin`、`ConnectionKind`、`JTI` 与 `ExpiresAt` 映射到同名 ticket facts，其中 `ConnectionKind` 决定 verifier 可接受的 `http`/`websocket` carrier。canary 会验证这些字段，但只暴露一个供 HTTP 与下行 pair 共享的 `connectionGeneration`。verifier 因而必须从控制面的 connection binding 推导该字段，并且只为精确 generation 与 carriers 缓存 exchange 后的 claims；缺失、过期、不匹配或重放的 claim 会被拒绝。`MembershipRevision`/`ScopeRevision`、`InstallationID`、`ReleaseDigest` 与 `PolicyRevision` 在该 canary 中仍留在 verifier 的权威决策内，因为 DSH 目前没有可对比的本地 installation/release/policy state。这是明确的兼容性缺口，不是 Aigora ↔ DSH 已完成生产集成的声明。
+
+两条下行流共享精确 fingerprint 的同一 connection generation；重复 stream、变化的 claim set，或同一个 `sid` 的不同 generation 都会关闭既有 sibling 并拒绝新 upgrade。每个加入的 generation 都会在 `expiresAt` 获得内部 hard-expiry timer：即使没有后续请求，它也会关闭两条 streams 并消费其 JTIs；gate dispose 会清理全部 timers。`jti` 会单独追踪，以拒绝其跨 generation 重用。该 gate 不是 OS 隔离、租户存储隔离、多租户部署或完整 OAuth 登录；它只是等待控制面 adapter 与真实 sandbox lifecycle 的本地 transport-admission canary。
+
 ## 模型体验
 
 无。协议消费层只在浏览器与主机之间搬运已经组合好的消息；这里没有任何内容进入模型请求。

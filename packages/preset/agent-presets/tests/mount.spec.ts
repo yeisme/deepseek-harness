@@ -700,6 +700,32 @@ describe('editing a composition file', () => {
     expect(await scoped.agentPresets.standingKeyFor('cold-read')).toBe(key)
   })
 
+  it('reports the standing mount\'s stamp and generation without starting an agent', async () => {
+    const { scoped, path } = await editable('facts-read')
+
+    const facts = await scoped.agentPresets.standingFactsFor('facts-read')
+
+    expect(facts.key).toEqual({ agentPreset: 'facts-read' })
+    expect(facts.generation).toBe(1)
+    const { mtimeMs, size } = await stat(path)
+    expect(facts.stamp).toEqual({ mtimeMs, size })
+    // The facts route and the key route resolve the same mount, so a caller
+    // proving a mount and a caller addressing registry views cannot disagree.
+    expect(await scoped.agentPresets.standingKeyFor('facts-read')).toBe(facts.key)
+    expect(scoped.agents.get(SessionId('facts-read'))).toBeUndefined()
+  })
+
+  it('counts one generation per file change, not per reader', async () => {
+    const { scoped, path } = await editable('facts-generation')
+
+    expect((await scoped.agentPresets.standingFactsFor('facts-generation')).generation).toBe(1)
+    expect((await scoped.agentPresets.standingFactsFor('facts-generation')).generation).toBe(1)
+
+    await writeFile(path, rowFor('afterwards'))
+
+    expect((await scoped.agentPresets.standingFactsFor('facts-generation')).generation).toBe(2)
+  })
+
   it('refuses to mount a generation it cannot stamp', async () => {
     const { scoped, path } = await editable('unstampable')
     await rm(path)

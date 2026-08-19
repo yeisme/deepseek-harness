@@ -24,12 +24,17 @@ import {
   type TrajectoryTimeRange,
 } from './timeline.ts'
 import { trajectoryRecordId } from './trajectory-record.ts'
+import {
+  trajectoryCellCategory,
+  type TrajectoryCategory,
+} from './trajectory-filter.ts'
 import { TrajectorySearchIndex } from './trajectory-search-index.ts'
 import { EMPTY_TRAJECTORY_SNAPSHOT } from './trajectory-snapshot-builder.ts'
 import css from './views.module.css'
 
 const EMPTY_TURN_IDS: ReadonlySet<number> = new Set()
 const EMPTY_RECORD_IDS: ReadonlySet<string> = new Set()
+const EMPTY_FILTERS: ReadonlySet<TrajectoryCategory> = new Set()
 const SEARCH_INDEX_THROTTLE_MS = 3_000
 
 function lastCellIndex(turns: readonly TrajectoryTurnModel[]): number {
@@ -128,6 +133,7 @@ export function TrajectoryView({
   const actualDuration = useDuration(value => value)
   const [actualTime, setActualTime] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeFilters, setActiveFilters] = useState<ReadonlySet<TrajectoryCategory>>(EMPTY_FILTERS)
   const [searchIndex] = useState(() => new TrajectorySearchIndex())
   const [searchIndexRevision, setSearchIndexRevision] = useState(0)
   const searchIndexTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -337,6 +343,30 @@ export function TrajectoryView({
     }
     return indexes
   }, [searchLayouts, searchMatchRecordIds])
+  const categoryFilterIndexes = useMemo(() => {
+    if (activeFilters.size === 0) return null
+    const indexes = new Set<number>()
+    for (const turns of searchLayouts) {
+      for (const turn of turns) {
+        for (const group of turn.groups) {
+          for (const cell of group.cells) {
+            const category = trajectoryCellCategory(cell)
+            if (category !== null && activeFilters.has(category)) indexes.add(cell.index)
+          }
+        }
+      }
+    }
+    return indexes
+  }, [activeFilters, searchLayouts])
+  const visibleMatchIndexes = useMemo(() => {
+    if (categoryFilterIndexes === null) return searchMatchIndexes
+    if (searchMatchIndexes === null) return categoryFilterIndexes
+    const indexes = new Set<number>()
+    for (const index of searchMatchIndexes) {
+      if (categoryFilterIndexes.has(index)) indexes.add(index)
+    }
+    return indexes
+  }, [categoryFilterIndexes, searchMatchIndexes])
   const timelineRange = timelineSelection
   const timelineFocusIndexes = useMemo(
     () => timelineRange === null
@@ -443,6 +473,15 @@ export function TrajectoryView({
     return loadOlder()
   }, [loadOlder])
 
+  const toggleFilter = (category: TrajectoryCategory) => {
+    setActiveFilters((current) => {
+      const next = new Set(current)
+      if (next.has(category)) next.delete(category)
+      else next.add(category)
+      return next
+    })
+  }
+
   return (
     <div className={css.root} data-conversation-composer-overlay="">
       <TrajectoryToolbar
@@ -462,6 +501,9 @@ export function TrajectoryView({
         onToggleAllAssistants={toggleAllAssistants}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
+        activeFilters={activeFilters}
+        onToggleFilter={toggleFilter}
+        onClearFilters={() => { setActiveFilters(EMPTY_FILTERS) }}
         t={t}
       />
       <TrajectoryTimeline
@@ -471,7 +513,7 @@ export function TrajectoryView({
         hasEarlierRecords={hasOlderHistory}
         onLoadEarlier={loadEarlierHistory}
         selectedIndex={selectedTimelineIndex}
-        searchMatchIndexes={searchMatchIndexes}
+        searchMatchIndexes={visibleMatchIndexes}
         onRangeChange={handleTimelineRangeChange}
         onRecordSelect={handleTimelineRecordSelect}
         onRecordFocus={handleTimelineRecordFocus}
@@ -482,7 +524,7 @@ export function TrajectoryView({
           turns={timelineTurns}
           streamingCells={streamingCells}
           timelineFocusIndexes={timelineFocusIndexes}
-          searchMatchIndexes={searchMatchIndexes}
+          searchMatchIndexes={visibleMatchIndexes}
           onSelectedIndexChange={setSelectedTimelineIndex}
           onRecordSelect={handleRecordSelect}
           recordSelection={timelineRecordSelection}

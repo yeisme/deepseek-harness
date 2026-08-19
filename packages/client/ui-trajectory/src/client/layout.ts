@@ -431,6 +431,7 @@ export function deriveTrajectoryLayout(input: TrajectoryLayoutInput): readonly T
             index: ++index,
             kind: 'tool',
             sourceSeq: node.seq,
+            ...(toolName !== undefined ? { toolName } : {}),
             ...(node.call !== null
               ? summarizeCall(node.call.name, node.call.argsRaw)
               : resultAsText(resultPreview)),
@@ -485,6 +486,7 @@ export function deriveTrajectoryLayout(input: TrajectoryLayoutInput): readonly T
       cell: {
         index: ++index,
         kind: 'tool',
+        toolName: call.name,
         ...summarizeCall(call.name, call.argsRaw),
         inputDetail: call.argsRaw,
         callId: call.callId,
@@ -737,6 +739,7 @@ function expandAssistant(
       ...(call === undefined ? {} : { subCalls: call.subCalls }),
       cell: {
         index: ++index, kind: 'tool',
+        toolName: block.name,
         ...summarizeCall(block.name, block.argsRaw),
         inputDetail: block.argsRaw,
         callId: block.callId,
@@ -1007,6 +1010,7 @@ function expandSubCalls(
       cell: {
         index: ++index,
         kind: 'subtool',
+        toolName: settled ? sub.call?.name ?? sub.callId : sub.name,
         callId: sub.callId,
         ...(settled
           ? (sub.call !== null

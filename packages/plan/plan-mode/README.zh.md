@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-按 agent（智能体）分别记录到日志的 plan 协作状态，提供由部署方配置的引导内容、用于直接进入的 `/plan [message]` 命令、用于直接退出的 `/plan off` 命令，以及经用户评审的 `exit_plan_mode` 退出方式。Plan mode 是软引导；沙箱模式和批准策略各自强制执行限制，且不读写 plan 状态。
+按 agent（智能体）分别记录到日志的 plan 协作状态，提供由部署方配置的引导内容、用于直接进入的 `/plan [message]` 命令、用于直接退出的 `/plan off` 命令、结构化澄清表单 `plan_form`，以及经用户评审的 `exit_plan_mode` 退出方式；每次提交的计划都会以完整值 `plan/document` 事件持久化。Plan mode 是软引导；沙箱模式和批准策略各自强制执行限制，且不读写 plan 状态。
 
 ## 持久状态
 
@@ -12,17 +12,19 @@
 
 ## 模型与人类交互
 
-激活时，`plan:policy` 会渲染已配置的 `section`。插件始终注册 `exit_plan_mode`，使工具 schema 在转换期间保持稳定；其 execute 路径只接受已激活的 plan mode，且只有通过 `ctx.userQuestions` 获得用户明确批准后才退出。
+激活时，`plan:policy` 会渲染已配置的 `section`。插件始终注册 `exit_plan_mode` 与 `plan_form`，使工具 schema 在转换期间保持稳定。`plan_form` 向用户发送一张结构化规划表单（一个或多个问题、选项、自定义文本），在把答案返回模型之前先记录请求/答案事件对。`exit_plan_mode` 只接受已激活的 plan mode，把提交的计划持久化为 `plan/document`（`proposed`），且只有通过 `ctx.userQuestions` 获得用户明确批准后才退出；批准或拒绝都会追加对应状态的 `plan/document`。
 
 评审问题声明 `plan-review` 呈现意图，并指名 `Approve` 为表示批准的标签，因此有能力的 UI 会把计划呈现为一次决定而非通用问题；两种情况下该工具读到的回答完全相同。放弃审阅——用户关闭请求，转而发言——会如实报告给模型，要求它留在 plan mode 中等待那条消息；其余每一种评审失败都保留 seam 自身的消息。
 
 组合 `ctx.commands` 时，该包会注册 `/plan [message]`，并将参数恰好为 `off` 的情况保留给直接退出。不带参数的 `/plan` 会启用 plan mode；任何其他非空参数都会先启用 plan mode，再通过 `agent.steer()` 提交，因此它会在 plan 引导下成为下一步骤的常规已记录用户消息。`/plan off` 会选择停用状态，不发送模型输入；它还可以在启用 plan mode 的待处理选择由轮内 pre-step 追加之前将其取消。
 
+当同时组合 `ctx.commands` 与 `ctx.permissionPresets` 时，该包还会注册可选的一键桥接命令 `/plan-readonly [message]`：它先选择 plan mode，再把会话权限预设切换为 `read-only`，然后提交可选消息。桥接命令通过 `ctx.permissionPresets` 读写权限状态，而绝不通过 plan 状态本身。
+
 Web 客户端使用该插件提供的 `/plan` 命令；其他入口可以直接驱动同一服务，无需定义第二套 mode 词汇。
 
 ## 会话投影
 
-当组合挂载 `ctx.sessionProjections`（[`@deepseek-ai/dsh-session-projection`](../../session/session-projection/README.md)）时，本包会在一个注入的子插件中注册 `plan` 投影单元。该单元折叠两类事件：名为 `plan` 且携带已记录 `args` 的 `command/run` 记录会设置目标状态（`off` → 未激活，其余 → 激活），`plan/mode` 会提交已记录状态并清除该目标；其他任何事件都返回同一个状态引用。`view` 推导 `{ active, pending }`，其中 `pending` 仅在尚未落实的选择与已记录状态不同时为 true。该值完全由日志回放得出，因此 host 重启、其他标签页和冷读都能仅凭日志恢复它。`/plan` 处理器会在任何可能失败的路径之前调用 `set()`，因此处理器失败时不会留下缺少对应 plan 选择的已记录命令。key 由 `src/types.ts` 通过声明合并加入 `SessionProjectionMap`：host 消费方经 `./types` 获取，client 聚合经 `./client` 获取。框架负责驱动该单元，载体通过历史尾页和 `session/projection` 推送帧提供其值。未挂载注册表的组合不受影响。
+当组合挂载 `ctx.sessionProjections`（[`@deepseek-ai/dsh-session-projection`](../../session/session-projection/README.md)）时，本包会在一个注入的子插件中注册 `plan` 与 `plan-document` 投影单元。该单元折叠两类事件：名为 `plan` 且携带已记录 `args` 的 `command/run` 记录会设置目标状态（`off` → 未激活，其余 → 激活），`plan/mode` 会提交已记录状态并清除该目标；其他任何事件都返回同一个状态引用。`view` 推导 `{ active, pending }`，其中 `pending` 仅在尚未落实的选择与已记录状态不同时为 true。该值完全由日志回放得出，因此 host 重启、其他标签页和冷读都能仅凭日志恢复它。`/plan` 处理器会在任何可能失败的路径之前调用 `set()`，因此处理器失败时不会留下缺少对应 plan 选择的已记录命令。key 由 `src/types.ts` 通过声明合并加入 `SessionProjectionMap`：host 消费方经 `./types` 获取，client 聚合经 `./client` 获取。框架负责驱动该单元，载体通过历史尾页和 `session/projection` 推送帧提供其值。未挂载注册表的组合不受影响。
 
 ## 配置
 
@@ -80,6 +82,12 @@ You are in plan mode. Explore and design before presenting the complete plan thr
 #### 模型所见内容
 
 [`exit_plan_mode` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-mode) 在两种状态下均可用；在 plan mode 外执行会失败，而 plan mode 内经批准的评审会返回规范的 `{ approved: true }` 值，并渲染既有的确认文本。拒绝仍是携带评审反馈的失败调用，放弃审阅则是一次指明用户接手的失败调用。
+
+### 规划表单
+
+#### 模型所见内容
+
+[`plan_form` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-form) 在两种状态下均可用；在 plan mode 外执行会失败。plan mode 内它向用户发送一张表单并返回结构化答案。每轮表单都会记录为 `plan/form/request` + `plan/form/answer`；最终 `plan/document` 通过 `sourceEventSeqs` 引用这些事件 seq。
 
 #### Token 影响
 

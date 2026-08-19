@@ -20,9 +20,29 @@ export interface PlanProjection {
   pending: boolean
 }
 
+/** One persisted plan document's projection view (the latest `plan/document`). */
+export interface PlanDocumentProjection {
+  planId: string
+  title: string
+  markdown: string
+  status: 'proposed' | 'approved' | 'executing' | 'completed' | 'superseded' | 'rejected'
+  round: number
+  feedback?: string | undefined
+}
+
+/** The `plan-document` projection's wire value. */
+export interface PlanDocumentProjectionValue {
+  /** Latest persisted plan document, or absent before the first one. */
+  latest?: PlanDocumentProjection | undefined
+  /** Every persisted plan document in log order (proposed/approved/rejected revisions included). */
+  revisions: PlanDocumentProjection[]
+}
+
 declare module '@deepseek-ai/dsh-session-projection/types' {
   interface SessionProjectionMap {
     /** Plan collaboration state folded from `command/run` (name `plan`) and `plan/mode` events. */
     plan: PlanProjection
+    /** Latest persisted plan document folded from whole-value `plan/document` events. */
+    'plan-document': PlanDocumentProjectionValue
   }
 }

@@ -66,7 +66,53 @@ function commitPlanMode(session: Session, active: boolean, turn: number): void {
 describe('plan projection unit', () => {
   it('serves inactive/not-pending for the empty log', async () => {
     const bench = await harness(true)
-    expect(bench.values()).toEqual({ plan: { active: false, pending: false } })
+    expect(bench.values()).toEqual({ plan: { active: false, pending: false }, 'plan-document': { latest: undefined, revisions: [] } })
+  })
+
+  it('serves the latest whole-value plan document through the plan-document key', async () => {
+    const bench = await harness(true)
+    expect(bench.values()['plan-document']).toEqual({ latest: undefined, revisions: [] })
+    bench.session.append('plan/document', {
+      planId: 'plan-1',
+      title: 'One',
+      markdown: '# One',
+      status: 'proposed',
+      round: 1,
+      sourceEventSeqs: [],
+    })
+    bench.session.append('plan/document', {
+      planId: 'plan-1',
+      title: 'One',
+      markdown: '# One\n\nRevised',
+      status: 'approved',
+      round: 1,
+      sourceEventSeqs: [2],
+    })
+    expect(bench.values()['plan-document']).toEqual({
+      latest: {
+        planId: 'plan-1',
+        title: 'One',
+        markdown: '# One\n\nRevised',
+        status: 'approved',
+        round: 1,
+      },
+      revisions: [
+        {
+          planId: 'plan-1',
+          title: 'One',
+          markdown: '# One',
+          status: 'proposed',
+          round: 1,
+        },
+        {
+          planId: 'plan-1',
+          title: 'One',
+          markdown: '# One\n\nRevised',
+          status: 'approved',
+          round: 1,
+        },
+      ],
+    })
   })
 
   it('a logged /plan selection reads pending until plan/mode records it', async () => {

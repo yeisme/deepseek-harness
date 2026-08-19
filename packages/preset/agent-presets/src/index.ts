@@ -33,7 +33,7 @@ import { discoverPresets, USER_PRESET_DIR } from './discovery.ts'
 import { copyComposition, deleteComposition, readComposition } from './authoring.ts'
 import { mountPreset, serviceForAgent, standingMountFor } from './mount.ts'
 import { PresetExistsError } from './authoring.ts'
-import { PresetMountError, UnknownPresetError, type AgentPreset, type Config, type PresetRoot } from './preset.ts'
+import { PresetMountError, UnknownPresetError, type AgentPreset, type Config, type PresetRoot, type PresetStandingFacts } from './preset.ts'
 import type {} from './types.ts'
 
 /** Settings namespace carrying the user's chosen default preset. */
@@ -63,8 +63,12 @@ export {
   PresetNotWritableError, readComposition, writableRoot,
 } from './authoring.ts'
 export { resolveSessionPreset, type PresetBearingSession } from './session.ts'
+export {
+  compositionTextDigest, LINEAGE_FILE, LINEAGE_SCHEMA, readPresetLineage, renderLineage,
+  type PresetLineage,
+} from './lineage.ts'
 export { PresetMountError, UnknownPresetError } from './preset.ts'
-export type { AgentPreset, Config, PresetRoot, PresetTrust } from './preset.ts'
+export type { AgentPreset, Config, PresetRoot, PresetStandingFacts, PresetTrust } from './preset.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -250,6 +254,14 @@ export class AgentPresets extends Service {
    * is bounded by how often compositions change, not by session count.
    */
   private readonly standing = new Map<string, Promise<StandingMount>>()
+
+  /**
+   * Generations mounted per preset id in this process, read by
+   * {@link standingFactsFor}. Survives a superseded generation's replacement:
+   * the count is a fact about how often the file changed, not about which
+   * generation is current.
+   */
+  private readonly generations = new Map<string, number>()
 
   /**
    * Parent bindings of the agents this roster composed, keyed by the agent's
@@ -483,8 +495,29 @@ export class AgentPresets extends Service {
    * @throws when the preset is unknown or its composition is unusable.
    */
   async standingKeyFor(id?: string): Promise<ScopeKey> {
+    return (await this.standingFactsFor(id)).key
+  }
+
+  /**
+   * The standing mount's read-side identity: its scope key, the composition
+   * file stamp of the mounted generation, and how many generations this
+   * process has mounted for the id.
+   *
+   * The one derivation behind {@link standingKeyFor}, so a caller proving a
+   * mount (a composition preview) and a caller only addressing registry views
+   * can never disagree about which mount answered.
+   * @param id - the preset id, or `undefined` for {@link defaultId}.
+   * @returns the mount's scope key, file stamp, and generation.
+   * @throws when the preset is unknown or its composition is unusable.
+   */
+  async standingFactsFor(id?: string): Promise<PresetStandingFacts> {
     const preset = await this.resolveMountable(id)
-    return (await this.ensureStanding(preset)).key
+    const standing = await this.ensureStanding(preset)
+    return {
+      key: standing.key,
+      stamp: { mtimeMs: standing.stamp.mtimeMs, size: standing.stamp.size },
+      generation: standing.generation,
+    }
   }
 
   /** Resolve (or create, single-flight) the standing mount of one preset. */
@@ -522,7 +555,9 @@ export class AgentPresets extends Service {
           throw new PresetMountError(preset.id, `composition file is unreadable: ${preset.path}`)
         }
         await mountPreset(scope.ctx, preset)
-        return { key, scope, stamp }
+        const generation = (this.generations.get(preset.id) ?? 0) + 1
+        this.generations.set(preset.id, generation)
+        return { key, scope, stamp, generation }
       } catch (error) {
         this.standing.delete(preset.id)
         await scope.dispose()
@@ -567,6 +602,8 @@ interface StandingMount {
   readonly scope: Scope
   /** Stamp of the composition file this generation was mounted from. */
   readonly stamp: CompositionStamp
+  /** Which mount of this preset id this generation is, from 1. */
+  readonly generation: number
 }
 
 export default AgentPresets

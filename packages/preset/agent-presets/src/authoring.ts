@@ -16,6 +16,7 @@ import { chmod, cp, readdir, readFile, rm, stat } from 'node:fs/promises'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { writeFileAtomic } from '@deepseek-ai/dsh-atomic-write'
 import { expandHomePath } from '@deepseek-ai/dsh-home-paths'
+import { compositionTextDigest, LINEAGE_FILE, renderLineage } from './lineage.ts'
 import { METADATA_FILE, renderPresetMetadata } from './metadata.ts'
 import { PRESET_ID, type AgentPreset, type PresetRoot } from './preset.ts'
 
@@ -125,6 +126,11 @@ async function tightenModes(dir: string): Promise<void> {
  * sorted into the shipped set's declared order, would make the roster stop
  * distinguishing them. With no name given and no description to keep, the
  * file is removed so the copy publishes nothing rather than a blank.
+ *
+ * A lineage file is written last, freezing the source's id and composition
+ * digest at copy time (`dsh.preset_lineage.v0`). It overwrites whatever the
+ * directory copy carried — a copy of a copy points at ITS source, not at the
+ * grandparent the file bytes came from.
  * @param roots - the configured roots; the first `user` one receives the copy.
  * @param source - the resolved preset the copy starts from.
  * @param id - the new preset's id, which becomes its directory name.
@@ -160,6 +166,20 @@ export async function copyComposition(
     } else {
       await writeFileAtomic(metadataPath, rendered, { mode: 0o600, dirMode: 0o700 })
     }
+    // Read after the copy, not before it: the digest frozen into lineage is
+    // the one the copied bytes actually carried, so an edit landing between
+    // the two reads still yields a copy whose lineage matches its content.
+    const sourceDigest = compositionTextDigest(await readFile(source.path, 'utf8'))
+    await writeFileAtomic(
+      join(dir, LINEAGE_FILE),
+      renderLineage({
+        schema: 'dsh.preset_lineage.v0',
+        source_id: source.id,
+        source_digest: sourceDigest,
+        copied_at: new Date().toISOString(),
+      }),
+      { mode: 0o600, dirMode: 0o700 },
+    )
   } catch (error) {
     // A half-copied directory would be invisible to discovery at best and a
     // mountable-but-incomplete preset at worst; a failed copy leaves nothing.

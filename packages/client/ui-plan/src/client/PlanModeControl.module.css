@@ -22,6 +22,23 @@
   cursor: pointer;
 }
 
+/* Inactive entry control uses the composer's neutral chip chrome; it shares
+   the pill geometry but not the warn-state tint. */
+.chipOff {
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.chipOff:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.chipOff:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+  outline: none;
+}
+
 .chip:hover:not(:disabled) {
   color: var(--dsw-alias-state-warn-primary);
 }

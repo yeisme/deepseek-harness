@@ -395,6 +395,31 @@ describe('GenericToolCard', () => {
     expect(view.container.querySelector('[data-state="running"]')).not.toBeNull()
   })
 
+  it('marks MCP, web, and read rows with category data for visual distinction', () => {
+    const mcp = render(
+      <GenericToolCard {...props('mcp__github__create_issue', running({
+        name: 'mcp__github__create_issue', argsRaw: '{}',
+      }))} />,
+    )
+    expect(mcp.container.querySelector('[data-category="mcp"]')).not.toBeNull()
+    cleanup()
+
+    const web = render(
+      <GenericToolCard {...props('web_search', running({
+        name: 'web_search', argsRaw: '{"query":"dsh"}',
+      }))} />,
+    )
+    expect(web.container.querySelector('[data-category="web"]')).not.toBeNull()
+    cleanup()
+
+    const read = render(
+      <GenericToolCard {...props('read', running({
+        name: 'read', argsRaw: '{"path":"src/a.ts"}',
+      }))} />,
+    )
+    expect(read.container.querySelector('[data-category="read"]')).not.toBeNull()
+  })
+
   it('renders edit with its dedicated title, icon variant, and path summary', () => {
     const view = render(
       <GenericToolCard {...props('edit', running({

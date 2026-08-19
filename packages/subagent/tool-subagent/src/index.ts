@@ -18,6 +18,8 @@ import { assertSubagentMaxDepth, settleRun } from '@deepseek-ai/dsh-subagent'
 import type { SubagentProvider, SubagentResult, SubagentRun } from '@deepseek-ai/dsh-subagent'
 import type { JobOutcome } from '@deepseek-ai/dsh-jobs'
 import type {} from '@deepseek-ai/dsh-system-prompt'
+// Type-only: resolves ctx.taskBasis for optional subagent basis capture.
+import type {} from '@deepseek-ai/dsh-task-basis'
 
 export const name = 'tool-subagent'
 export const inject = ['tools', 'subagents', 'systemPrompt']
@@ -422,11 +424,17 @@ export function apply(ctx: Context, config: Config): void {
           return { kind: 'background' as const, jobId: id }
         }
 
+        const taskBasis = ctx.get('taskBasis')
+        const taskId = `subagent:${exec.callId}`
+        if (taskBasis !== undefined) taskBasis.capture(parent.session, taskId)
+
         const run: SubagentRun = await ctx.subagents.start(config.provider, {
           ...request,
           signal: exec.signal,
         })
-        return settleForegroundRun(run)
+        const result = await settleForegroundRun(run)
+        if (taskBasis !== undefined) taskBasis.check(parent.session, taskId)
+        return result
       },
     }))
   }

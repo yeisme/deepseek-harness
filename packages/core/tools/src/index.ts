@@ -690,10 +690,19 @@ interface CompiledToolRestriction {
   readonly deny?: ReadonlySet<string>
 }
 
+/**
+ * Which layer of the registry supplied one visible tool: the context-global
+ * table, some scope's own or inherited layer, or the reserved Code Mode
+ * transport (present only for scopes presenting a code mode).
+ */
+export type ToolOrigin = 'global' | 'scoped' | 'transport'
+
 /** One scope's complete registry view, derived in a single layer traversal. */
 interface ToolView {
   /** Visible definitions after restrictions, scoped shadowing, and transport insertion. */
   readonly visible: ReadonlyMap<string, ToolDefinition>
+  /** Where each visible definition came from, keyed like {@link visible}. */
+  readonly origins: ReadonlyMap<string, ToolOrigin>
   /** Pre-restriction capability names used by prompt-order validation. */
   readonly knownNames: ReadonlySet<string>
   /** Current global names that a scoped restriction may name. */
@@ -769,6 +778,32 @@ interface ToolCancellationState {
 interface FusedToolSignal {
   readonly signal: AbortSignal
   dispose(): void
+}
+
+/**
+ * Attribute each visible tool name to the layer that supplied it. Scoped
+ * layers overwrite the global attribution as the inheritance walk reaches
+ * them, so the origin a reader sees is the layer whose entry the scope
+ * actually resolves — the same nearest-wins rule as the definitions.
+ */
+function originsOf(
+  layers: readonly ToolLayer[],
+  own: ToolLayer | undefined,
+  visible: ReadonlyMap<string, ToolDefinition>,
+): Map<string, ToolOrigin> {
+  const originOf = new Map<string, ToolOrigin>()
+  for (const layer of layers) {
+    if (layer === own) continue
+    for (const name of layer.tools.keys()) originOf.set(name, 'scoped')
+  }
+  if (own !== undefined) for (const name of own.tools.keys()) originOf.set(name, 'scoped')
+  const origins = new Map<string, ToolOrigin>()
+  for (const name of visible.keys()) {
+    // `run_code` is never registrable, so every other visible name walked one
+    // of the layers above; only the transport resolves to no layer.
+    origins.set(name, name === RUN_CODE_NAME ? 'transport' : (originOf.get(name) ?? 'global'))
+  }
+  return origins
 }
 
 /** Resolve the run_code overlap cap at the owning config boundary (direct construction bypasses the Loader schema). */
@@ -1189,7 +1224,7 @@ export class ToolRuntime extends Service {
     if (this.modeFor(scope) !== 'native') {
       visible.set(RUN_CODE_NAME, this.requireCodeTransport())
     }
-    return { visible, knownNames, restrictableNames }
+    return { visible, origins: originsOf(layers, own, visible), knownNames, restrictableNames }
   }
 
   /**
@@ -1233,6 +1268,21 @@ export class ToolRuntime extends Service {
    */
   schemas(scope?: ScopeKey): ToolSchema[] {
     return [...this.view(scope).visible.values()].map(definition => this.schemaOf(definition, true))
+  }
+
+  /**
+   * Attribute each visible tool name to the registry layer that supplied it.
+   *
+   * Keyed exactly like {@link schemas}: one entry per visible tool, so a
+   * reader composing the two answers one composition fact — what the scope
+   * sees AND which layer it came from. A host reader with no agent passes a
+   * standing scope key (an agent preset's mount), the same addressing cold
+   * transcript reads use.
+   * @param scope - the viewing scope (the agent), or undefined for the global view.
+   * @returns visible tool names mapped to their supplying layer.
+   */
+  sources(scope?: ScopeKey): ReadonlyMap<string, ToolOrigin> {
+    return this.view(scope).origins
   }
 
   /** Project visible callable tools onto the generated Code Mode SDK contract. */

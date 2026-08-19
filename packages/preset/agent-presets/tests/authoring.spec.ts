@@ -16,7 +16,8 @@ import Loader from '@deepseek-ai/cordis-plugin-loader'
 import Include from '@deepseek-ai/cordis-plugin-include'
 import { beforeEach, describe, expect, it } from 'vitest'
 import AgentPresets, {
-  COMPOSITION_FILE, copyComposition, METADATA_FILE,
+  COMPOSITION_FILE, compositionTextDigest, copyComposition, LINEAGE_FILE, METADATA_FILE,
+  readPresetLineage,
 } from '@deepseek-ai/dsh-agent-presets'
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), 'fixtures')
@@ -166,6 +167,54 @@ describe('copying a preset', () => {
       [{ path: userRoot, trust: 'user' as const }], source, 'mine',
     )).rejects.toThrow()
     expect(existsSync(join(userRoot, 'mine'))).toBe(false)
+  })
+})
+
+describe('recording copy lineage', () => {
+  it('freezes the source id and composition digest at copy time', async () => {
+    await ctx.agentPresets.copy('standard', 'mine')
+
+    const lineage = await readPresetLineage(join(userRoot, 'mine'))
+    expect(lineage).toMatchObject({
+      schema: 'dsh.preset_lineage.v0',
+      source_id: 'standard',
+      source_digest: compositionTextDigest(await ctx.agentPresets.read('standard')),
+    })
+    expect(lineage?.copied_at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+  })
+
+  it('points a copy of a copy at its own source, not the inherited file', async () => {
+    await ctx.agentPresets.copy('standard', 'first')
+    await ctx.agentPresets.copy('first', 'second')
+
+    // The directory copy carries `first`'s lineage bytes; the service rewrites
+    // them, or every descendant would claim the same grandparent forever.
+    expect(await readPresetLineage(join(userRoot, 'second'))).toMatchObject({
+      source_id: 'first',
+      source_digest: compositionTextDigest(await ctx.agentPresets.read('first')),
+    })
+  })
+
+  it('reads no lineage from a preset the service never copied', async () => {
+    await seedPreset(userRoot, 'hand-made')
+
+    expect(await readPresetLineage(join(userRoot, 'hand-made'))).toBeUndefined()
+  })
+
+  it('degrades a hand-edited lineage to no lineage rather than failing the preset', async () => {
+    await ctx.agentPresets.copy('standard', 'mine')
+    await writeFile(join(userRoot, 'mine', LINEAGE_FILE), 'schema: not-it\nsource_id: standard\n')
+
+    expect(await readPresetLineage(join(userRoot, 'mine'))).toBeUndefined()
+  })
+
+  it('never affects mounting: a copied preset still composes an agent', async () => {
+    await ctx.agentPresets.copy('standard', 'mine')
+
+    // Lineage is a read-side fact; the composition it rides beside mounts
+    // exactly as its source does (the copy-is-as-loadable contract).
+    const listed = await ctx.agentPresets.list()
+    expect(listed.find(preset => preset.id === 'mine')?.broken).toBeUndefined()
   })
 })
 

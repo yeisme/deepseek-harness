@@ -29,6 +29,15 @@ export type AskUserQuestionIntent = {
    * An `approve` naming no option of its own question is rejected at `ask()`.
    */
   approve: string
+} | {
+  /**
+   * A structured planning form: the questions collect plan requirements before
+   * the model drafts or revises a plan. `title` is the optional form heading
+   * and `planId` ties the form to a persisted plan document.
+   */
+  kind: 'plan-form'
+  title?: string
+  planId?: string
 }
 
 /** One question in a user-questions request. */

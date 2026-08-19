@@ -12,6 +12,8 @@ import { boundContextSummary, createUserMessage, HarnessError } from '@deepseek-
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { GenericCallView } from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/dsh-system-prompt'
+// Type-only: resolves ctx.taskBasis for optional goal basis capture.
+import type {} from '@deepseek-ai/dsh-task-basis'
 import {
   completionAuthority,
   goalToolExecution,
@@ -226,6 +228,8 @@ export function apply(ctx: Context, config: Config): void {
         objective: args.objective,
         ...args.max_goal_rounds === undefined ? {} : { maxGoalRounds: args.max_goal_rounds },
       })
+      const taskBasis = ctx.get('taskBasis')
+      if (taskBasis !== undefined) taskBasis.capture(execution.agent.session, `goal:${goal.id}`)
       return Promise.resolve(goalValue(goal))
     },
     presentCall: args => present('Create goal', 'other', args.objective),
@@ -304,6 +308,8 @@ export function apply(ctx: Context, config: Config): void {
           'GOAL_TOOL_BLOCK_THRESHOLD',
         )
       }
+      const taskBasis = ctx.get('taskBasis')
+      if (taskBasis !== undefined) taskBasis.check(execution.agent.session, `goal:${ref.id}`)
       const goal = args.action === 'complete'
         ? ctx.goals.complete(execution.agent, ref)
         : ctx.goals.block(execution.agent, ref, {

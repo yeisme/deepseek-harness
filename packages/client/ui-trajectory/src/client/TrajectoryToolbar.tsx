@@ -3,6 +3,7 @@
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import { IconSearchOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { NS } from './locales.ts'
+import { TRAJECTORY_CATEGORIES, type TrajectoryCategory } from './trajectory-filter.ts'
 import css from './TrajectoryToolbar.module.css'
 
 export interface TrajectoryToolbarProps {
@@ -26,6 +27,12 @@ export interface TrajectoryToolbarProps {
   searchQuery: string
   /** Update the live ledger search query. */
   onSearchQueryChange: (query: string) => void
+  /** Active category filters; an empty set means all categories. */
+  activeFilters: ReadonlySet<TrajectoryCategory>
+  /** Toggle one category filter. */
+  onToggleFilter: (category: TrajectoryCategory) => void
+  /** Clear every category filter. */
+  onClearFilters: () => void
   /** Translate a toolbar dictionary key. */
   t: TranslateNS<typeof NS>
 }
@@ -46,6 +53,9 @@ export function TrajectoryToolbar({
   onToggleAllAssistants,
   searchQuery,
   onSearchQueryChange,
+  activeFilters,
+  onToggleFilter,
+  onClearFilters,
   t,
 }: TrajectoryToolbarProps) {
   return (
@@ -110,6 +120,28 @@ export function TrajectoryToolbar({
             </span>
             {t('toolbar.calls')}
           </button>
+        </div>
+        <div className={css.filters} role="group" aria-label={t('toolbar.filterAria')}>
+          <button
+            type="button"
+            className={activeFilters.size === 0 ? css.filterActive : css.filter}
+            aria-pressed={activeFilters.size === 0}
+            onClick={onClearFilters}
+          >
+            {t('toolbar.filterAll')}
+          </button>
+          {TRAJECTORY_CATEGORIES.map(category => (
+            <button
+              key={category}
+              type="button"
+              className={activeFilters.has(category) ? css.filterActive : css.filter}
+              aria-pressed={activeFilters.has(category)}
+              title={t(`toolbar.filter.${category}`)}
+              onClick={() => { onToggleFilter(category) }}
+            >
+              {t(`toolbar.filter.${category}`)}
+            </button>
+          ))}
         </div>
         <div className={css.search}>
           <IconSearchOutline16 size={11} className={css.searchIcon} />

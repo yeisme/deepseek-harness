@@ -15,6 +15,8 @@ import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { ToolCallView, ToolResultView } from '@deepseek-ai/dsh-tools'
 import type { ContentBlock } from '@deepseek-ai/dsh-llm'
+// Type-only: resolves ctx.taskBasis for optional workflow basis capture.
+import type {} from '@deepseek-ai/dsh-task-basis'
 import type { JsonValue, Session, SessionEventMap } from '@deepseek-ai/dsh-session'
 import type {
   WorkflowResult, WorkflowRun, WorkflowRunId, WorkflowStopReason,
@@ -293,6 +295,12 @@ export function apply(ctx: Context, config: Config): void {
       // worker messages, after start() returns and this run record is active.
       if (recordsRun) recorder.start(parent.session, run)
 
+      // Optional long-task basis: capture the plan/spec seqs the workflow is
+      // based on, then check them before commit.
+      const taskBasis = ctx.get('taskBasis')
+      const taskId = `workflow:${run.id}`
+      if (taskBasis !== undefined) taskBasis.capture(parent.session, taskId)
+
       // Bridge the tool's abort signal to the run: if the parent step is aborted while the
       // script is in flight, cancel the whole run. The signal also enters the engine directly, but
       // this local bridge preserves the tool contract even if an implementation ignores it.
@@ -322,6 +330,7 @@ export function apply(ctx: Context, config: Config): void {
           if (recordsRun) {
             /* v8 ignore next -- WorkflowRun.result never rejects by contract, so result is assigned before finally. */
             if (result === undefined) throw new Error('workflow run settled without a result')
+            if (taskBasis !== undefined) taskBasis.check(parent.session, taskId)
             recorder.finish(run.id, result.stopReason)
           }
         } finally {

@@ -19,6 +19,15 @@ export type TrajectoryKey =
   | 'toolbar.collapseCalls'
   | 'toolbar.search'
   | 'toolbar.searchPlaceholder'
+  | 'toolbar.filterAria'
+  | 'toolbar.filterAll'
+  | 'toolbar.filter.think'
+  | 'toolbar.filter.read'
+  | 'toolbar.filter.write'
+  | 'toolbar.filter.shell'
+  | 'toolbar.filter.web'
+  | 'toolbar.filter.mcp'
+  | 'toolbar.filter.tool'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -43,6 +52,15 @@ export const zh: Record<TrajectoryKey, string> = {
   'toolbar.collapseCalls': 'Collapse calls',
   'toolbar.search': '搜索轨迹',
   'toolbar.searchPlaceholder': '搜索',
+  'toolbar.filterAria': '筛选轨迹类型',
+  'toolbar.filterAll': '全部',
+  'toolbar.filter.think': '思考',
+  'toolbar.filter.read': '读取',
+  'toolbar.filter.write': '写入',
+  'toolbar.filter.shell': '命令',
+  'toolbar.filter.web': '网页',
+  'toolbar.filter.mcp': 'MCP',
+  'toolbar.filter.tool': '其他',
 }
 
 /** English dictionary. */
@@ -61,4 +79,13 @@ export const en: Record<TrajectoryKey, string> = {
   'toolbar.collapseCalls': 'Collapse calls',
   'toolbar.search': 'Search trajectory',
   'toolbar.searchPlaceholder': 'Search',
+  'toolbar.filterAria': 'Filter trajectory records',
+  'toolbar.filterAll': 'All',
+  'toolbar.filter.think': 'Think',
+  'toolbar.filter.read': 'Read',
+  'toolbar.filter.write': 'Write',
+  'toolbar.filter.shell': 'Shell',
+  'toolbar.filter.web': 'Web',
+  'toolbar.filter.mcp': 'MCP',
+  'toolbar.filter.tool': 'Other',
 }

@@ -73,6 +73,8 @@ export interface PiAiProviderProfile {
    * no protocol at all; a route the catalog does not ship must name one.
    */
   api?: string
+  /** Authentication header mode for the harness-resolved credential. */
+  authMode?: 'api-key' | 'bearer'
   /** Endpoint for this route's models; defaults to the installed catalog's endpoint. */
   baseURL?: string
   /**
@@ -233,6 +235,7 @@ const profile = z.object({
   apiKeyEnv: z.string().role('credential-ref'),
   displayName: z.string(),
   api: z.union(supportedProtocols()),
+  authMode: z.union(['api-key', 'bearer']).default('api-key'),
   baseURL: z.string(),
   models: z.array(modelProfile),
   modelOverrides: z.dict(modelOverride),
@@ -362,6 +365,7 @@ export function resolveProfiles(
         provider,
         displayName,
         ...source.api === undefined ? {} : { api: source.api },
+        authMode: source.authMode ?? 'api-key',
         ...source.baseURL === undefined ? {} : { baseURL: source.baseURL },
         models: catalog.models,
         namesCredential: apiKeyEnv !== undefined,

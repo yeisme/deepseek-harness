@@ -20,6 +20,7 @@
 import { Context, Service } from '@deepseek-ai/cordis'
 import type { ZodType } from 'zod'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
+import { scopeOf, type ScopeKey } from '@deepseek-ai/dsh-scope'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -138,18 +139,21 @@ interface UnitCell {
  * One live registration: the unit plus its per-session cells (dropped whole
  * once the last registrant releases it).
  *
- * `refs` exists because one unit definition already serves every session — the
- * cells are keyed by `Session` — while the registrants are now per-session:
- * an agent preset mounts the same tool package once per agent, so N sessions
- * on one preset register the same key N times. Without a count the first
- * registrant would own the disposer, and its session ending would strip the
- * projection from every other live session.
+ * Registrants exist as a count because one unit definition already serves
+ * every session — the cells are keyed by `Session` — while the registrants
+ * are now per-session: an agent preset mounts the same tool package once per
+ * agent, so N sessions on one preset register the same key N times. Without
+ * a count the first registrant would own the disposer, and its session
+ * ending would strip the projection from every other live session. Each
+ * registrant also records the scope its registration context carried, so a
+ * read-side caller can attribute a key to the composition that contributed
+ * it without observing registrations as they happen.
  */
 interface Registration {
   readonly def: ErasedDefinition
   readonly cells: WeakMap<Session, UnitCell>
-  /** Live registrants sharing this unit; the last one out removes the key. */
-  refs: number
+  /** Live registrants sharing this unit, one entry each; the last one out removes the key. */
+  scopes: (ScopeKey | undefined)[]
 }
 
 /**
@@ -195,11 +199,15 @@ export class SessionProjectionRegistry extends Service {
     if (!Number.isSafeInteger(definition.stateVersion) || definition.stateVersion < 0) {
       throw new Error(`session projection ${JSON.stringify(definition.key)} stateVersion must be a non-negative integer, got ${String(definition.stateVersion)}`)
     }
+    // Read before the effect: the calling context's scope is the registration
+    // fact being attributed, and the effect body must not depend on when the
+    // scheduler runs it.
+    const scope = scopeOf(this.ctx)
     const dispose = this.ctx.effect(function* (this: SessionProjectionRegistry) {
       const key = definition.key as string
       const existing = this.registrations.get(key)
       if (existing === undefined) {
-        this.registrations.set(key, { def: definition, cells: new WeakMap(), refs: 1 })
+        this.registrations.set(key, { def: definition, cells: new WeakMap(), scopes: [scope] })
       } else {
         // A differing `stateVersion` is the one incompatibility this can name:
         // the versioned contract says the cached state shape differs, so the
@@ -208,17 +216,37 @@ export class SessionProjectionRegistry extends Service {
         if (existing.def.stateVersion !== definition.stateVersion) {
           throw new Error(`session projection key ${JSON.stringify(key)} is already registered at stateVersion ${String(existing.def.stateVersion)}; refusing to share it with stateVersion ${String(definition.stateVersion)}`)
         }
-        existing.refs += 1
+        existing.scopes.push(scope)
       }
       yield () => {
         const live = this.registrations.get(key)
         /* v8 ignore next -- the disposer runs once per successful registration, so the entry it counted is still here */
         if (live === undefined) return
-        live.refs -= 1
-        if (live.refs === 0) this.registrations.delete(key)
+        // Any one matching entry: registrants of one key are interchangeable
+        // by the sharing contract above, so which occurrence leaves is
+        // unobservable.
+        live.scopes.splice(live.scopes.lastIndexOf(scope), 1)
+        if (live.scopes.length === 0) this.registrations.delete(key)
       }
     }.bind(this), 'sessionProjections.register()')
     return () => void dispose()
+  }
+
+  /**
+   * Attribute every live unit key to the scopes that registered it.
+   *
+   * A detached point-in-time copy: a key maps to the set of registration
+   * scopes holding it, where an absent scope means a context-global
+   * registrant. Read-side callers (a composition preview naming the units a
+   * preset contributes) compare the set against their own scope key.
+   * @returns unit keys mapped to their live registration scopes.
+   */
+  attributions(): ReadonlyMap<string, ReadonlySet<ScopeKey | undefined>> {
+    const attributed = new Map<string, ReadonlySet<ScopeKey | undefined>>()
+    for (const [key, registration] of this.registrations) {
+      attributed.set(key, new Set(registration.scopes))
+    }
+    return attributed
   }
 
   /**

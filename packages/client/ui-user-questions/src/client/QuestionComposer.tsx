@@ -5,10 +5,11 @@ import {
   IconCloseOutline16, IconEditOutline16, MarkdownText,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import {
-  PendingQuestion, planReviewOf,
-  type QuestionAnswer, type QuestionComposerProps,
+  PendingQuestion, planFormOf, planReviewOf,
+  type PlanForm, type QuestionAnswer, type QuestionComposerProps,
 } from './contract/slots.ts'
 import { PlanReviewPanel } from './PlanReviewPanel.tsx'
+import { PlanFormPanel } from './PlanFormPanel.tsx'
 import css from './QuestionComposer.module.css'
 
 interface DraftAnswer {
@@ -62,12 +63,16 @@ export function QuestionComposer(props: QuestionComposerProps) {
   // select/render dispatch — per-dispatch minting would churn memo identity).
   const question = useMemo(() => new PendingQuestion(props.matched), [props.matched])
   const review = useMemo(() => planReviewOf(question.questions), [question])
-  return review === undefined
-    ? <QuestionFlow key={question.key} pending={question} t={props.t} />
-    : <PlanReviewPanel key={question.key} pending={question} review={review} t={props.t} />
+  const form = useMemo(() => planFormOf(question.questions), [question])
+  if (review !== undefined) {
+    return <PlanReviewPanel key={question.key} pending={question} review={review} t={props.t} />
+  }
+  return form === undefined
+    ? <QuestionFlow key={question.key} pending={question} t={props.t} form={undefined} />
+    : <PlanFormPanel key={question.key} pending={question} form={form} t={props.t} />
 }
 
-function QuestionFlow({ pending, t }: { pending: PendingQuestion } & Pick<QuestionComposerProps, 't'>) {
+function QuestionFlow({ pending, t, form }: { pending: PendingQuestion; form: PlanForm | undefined } & Pick<QuestionComposerProps, 't'>) {
   const questions = pending.questions
   const [index, setIndex] = useState(0)
   const [drafts, setDrafts] = useState<DraftAnswer[]>(() => questions.map(() => ({
@@ -194,6 +199,13 @@ function QuestionFlow({ pending, t }: { pending: PendingQuestion } & Pick<Questi
       <section className={css.card} aria-labelledby={`question-${pending.key}-${String(index)}`}>
         <header className={css.header}>
           <div className={css.headingBlock}>
+            {form !== undefined && (
+              <div className={css.eyebrow}>
+                {form.title ?? t('form.title')}
+                {' · '}
+                {t('form.progress', { index: index + 1, count: questions.length })}
+              </div>
+            )}
             {question.header !== undefined && <div className={css.eyebrow}>{question.header}</div>}
             <h2 className={css.title} id={`question-${pending.key}-${String(index)}`}>
               {question.question}
@@ -305,7 +317,11 @@ function QuestionFlow({ pending, t }: { pending: PendingQuestion } & Pick<Questi
             >
               <IconChevronLeftOutline14 />
             </button>
-            <span className={css.progress}>{index + 1} / {questions.length}</span>
+            <span className={css.progress}>
+              {form === undefined
+                ? `${index + 1} / ${questions.length}`
+                : t('form.progress', { index: index + 1, count: questions.length })}
+            </span>
             <button
               type="button" className={css.iconButton} aria-label={t('nav.next')}
               disabled={index === questions.length - 1 || busy !== null}
@@ -327,7 +343,9 @@ function QuestionFlow({ pending, t }: { pending: PendingQuestion } & Pick<Questi
             >
               {busy === 'answer'
                 ? t('submitting')
-                : index === questions.length - 1 ? t('submit') : t('action.next')}
+                : index === questions.length - 1
+                  ? form === undefined ? t('submit') : t('form.submit')
+                  : t('action.next')}
             </Button>
           </div>
         </footer>

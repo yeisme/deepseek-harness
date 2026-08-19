@@ -74,13 +74,14 @@ export function supportedProtocols(): readonly string[] {
  * @param name - display name used as the resolution's status label.
  * @returns the api-key auth for a harness-authenticated route.
  */
-function harnessApiKeyAuth(name: string): ApiKeyAuth {
+function harnessApiKeyAuth(name: string, mode: 'api-key' | 'bearer'): ApiKeyAuth {
   return {
     name,
-    resolve: ({ credential }) => Promise.resolve({
-      auth: credential?.key === undefined ? {} : { apiKey: credential.key },
-      source: name,
-    }),
+    resolve: ({ credential }) => Promise.resolve(credential?.key === undefined
+      ? { auth: {}, source: name }
+      : mode === 'bearer'
+        ? { auth: { headers: { Authorization: `Bearer ${credential.key}` } }, source: name }
+        : { auth: { apiKey: credential.key }, source: name }),
   }
 }
 
@@ -92,6 +93,8 @@ export interface ProviderSpec {
   displayName: string
   /** Wire protocol override; absent means each model keeps its catalog protocol. */
   api?: string
+  /** Authentication header mode for the harness-resolved credential. */
+  authMode?: 'api-key' | 'bearer'
   /** Endpoint override already applied to {@link models}; kept for provider-level display. */
   baseURL?: string
   /** The route's materialized models, in configuration order. */
@@ -129,9 +132,14 @@ export interface ProviderSpec {
  * @returns the auth to construct this route's provider with.
  */
 function routeAuth(spec: ProviderSpec, catalog: Provider | undefined): Provider['auth'] {
-  if (catalog === undefined) return { apiKey: harnessApiKeyAuth(spec.displayName) }
+  const authMode = spec.authMode ?? 'api-key'
+  const harnessAuth = harnessApiKeyAuth(spec.displayName, authMode)
+  if (catalog === undefined) return { apiKey: harnessAuth }
+  if (spec.namesCredential && authMode === 'bearer') {
+    return { ...catalog.auth, apiKey: harnessAuth }
+  }
   if (catalog.auth.apiKey !== undefined || !spec.namesCredential) return catalog.auth
-  return { ...catalog.auth, apiKey: harnessApiKeyAuth(spec.displayName) }
+  return { ...catalog.auth, apiKey: harnessAuth }
 }
 
 /**

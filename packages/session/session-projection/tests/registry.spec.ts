@@ -12,6 +12,8 @@ import { Context } from '@deepseek-ai/cordis'
 import { z } from 'zod'
 import SessionStore from '@deepseek-ai/dsh-session'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
+import { createScope } from '@deepseek-ai/dsh-scope'
+import type { Scope } from '@deepseek-ai/dsh-scope'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 
@@ -137,6 +139,39 @@ describe('SessionProjectionRegistry drive', () => {
     expect(() => ctx.sessionProjections.register(marksUnit())).not.toThrow()
     mark(session, ['kept'])
     expect(ctx.sessionProjections.snapshot(session).values['test/marks']).toEqual({ marks: ['kept'] })
+  })
+
+  it('attributes each live key to the scopes that registered it', async () => {
+    const { ctx, session } = await harness()
+    const presetKey = { agentPreset: 'standard' }
+    ctx.sessionProjections.register(marksUnit())
+    // A scope whose context carries the key, exactly as a preset's standing
+    // mount does for the rows it composes.
+    const scoped = await ctx.plugin(Object.assign((inner: Context) => {
+      inner.sessionProjections.register(countUnit())
+    }, { inject: ['sessionProjections'] }))
+    // The minting plugin above runs unscoped; re-register through a real
+    // scope context so the attribution names the key itself.
+    let scope!: Scope
+    await ctx.plugin(Object.assign((inner: Context) => {
+      scope = createScope(inner, presetKey)
+    }, { inject: ['sessionProjections'] }))
+    const disposeScoped = scope.ctx.sessionProjections.register(countUnit())
+
+    // A context-global registrant attributes to the absent scope; the count
+    // unit carries both its scopes while both registrants live.
+    expect(ctx.sessionProjections.attributions().get('test/marks')).toEqual(new Set([undefined]))
+    expect(ctx.sessionProjections.attributions().get('test/count'))
+      .toEqual(new Set([undefined, presetKey]))
+
+    disposeScoped()
+    expect(ctx.sessionProjections.attributions().get('test/count')).toEqual(new Set([undefined]))
+    mark(session, ['a'])
+    expect(ctx.sessionProjections.snapshot(session).values['test/marks']).toEqual({ marks: ['a'] })
+    expect(ctx.sessionProjections.snapshot(session).values['test/count']).toBe(1)
+
+    await scoped.dispose()
+    expect(ctx.sessionProjections.attributions().has('test/count')).toBe(false)
   })
 
   it('keeps the unit until the last registrant releases it', async () => {

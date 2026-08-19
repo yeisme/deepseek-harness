@@ -7,6 +7,7 @@ import ToolRuntime, { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
 import AgentRegistry, { type Agent } from '@deepseek-ai/dsh-agent'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
 import PlanModeController, { foldPlanMode } from '@deepseek-ai/dsh-plan-mode'
+import UserQuestionService from '@deepseek-ai/dsh-user-questions'
 import { MockAdapter, textResponse, toolCallResponse } from '../../../core/agent-loop/tests/mock-adapter.ts'
 
 const PLAN_CONFIG = { section: 'Test plan mode instructions.' }
@@ -82,7 +83,7 @@ describe('plan mode through the agent loop', () => {
     const header = findEvent(log, 'request/header')
     expect(planMode.seq).toBeLessThan(header.seq)
     expect(header.data.reason).toBe('initial')
-    expect(header.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'read', 'write'])
+    expect(header.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'plan_complete', 'plan_form', 'read', 'write'])
     expect(header.data.header.system).toContain('plan mode')
 
     // No tool gate: the write RUNS — plan restrains by the section's
@@ -91,7 +92,10 @@ describe('plan mode through the agent loop', () => {
     const result = findEvent(log, 'tool/result')
     expect(result.data.message.content[0].isError).toBe(false)
     expect(foldPlanMode(log)).toBe(true)
-    expect(log.some(event => event.type === 'user/message' && event.data.source.kind === 'plugin')).toBe(false)
+    expect(log.some(event => event.type === 'user/message'
+      && event.data.source.kind === 'plugin'
+      && event.data.content[0]?.type === 'text'
+      && event.data.content[0].text?.startsWith('You are still in plan mode'))).toBe(true)
   })
 
   it('a user flip between turns lands at the boundary: one notice and a changed header with stable tool schemas', async () => {
@@ -106,9 +110,17 @@ describe('plan mode through the agent loop', () => {
     await waitForIdle(ctx, agent)
     expect(foldPlanMode(agent.session.events)).toBe(false)
     const first = findEvent(agent.session.events, 'request/header')
-    expect(first.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'read', 'write'])
+    expect(first.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'plan_complete', 'plan_form', 'read', 'write'])
 
     ctx.planMode.set(agent, true)
+    agent.session.append('plan/document', {
+      planId: 'plan-1',
+      title: 'P',
+      markdown: '# P',
+      status: 'proposed',
+      round: 1,
+      sourceEventSeqs: [],
+    })
     agent.followup(createUserMessage({ content: [{ type: 'text', text: 'now plan' }], source: { kind: 'user' } }))
     await waitForIdle(ctx, agent)
 
@@ -122,9 +134,57 @@ describe('plan mode through the agent loop', () => {
     // The changed request is logged as a complete snapshot.
     const second = findEvent(log, 'request/header', 'last')
     expect(second.data.reason).toBe('change')
-    expect(second.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'read', 'write'])
+    expect(second.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'plan_complete', 'plan_form', 'read', 'write'])
     expect(second.data.header.tools).toEqual(first.data.header.tools)
     expect(second.data.header.system).toContain('plan mode')
+  })
+
+  it('runs plan_form and exit_plan_mode through the real loop, persisting form and document events', async () => {
+    const adapter = new MockAdapter([
+      toolCallResponse('call-1', 'plan_form', {
+        questions: [{ id: 'goal', question: 'What should the plan accomplish?', options: [{ label: 'Fix the flake' }] }],
+        header: 'Planning form',
+      }, 'Form answers.'),
+      toolCallResponse('call-2', 'exit_plan_mode', { plan: '# Fix the flake\n\nAdd a retry.' }, 'Plan review.'),
+      textResponse('DONE'),
+    ])
+    const ctx = await harness(adapter)
+    await ctx.plugin(UserQuestionService)
+    ctx.userQuestions.registerProvider({
+      ask: async (request) => {
+        const first = request.questions[0]
+        if (first?.intent?.kind === 'plan-form') {
+          return { answers: request.questions.map(question => ({ id: question.id, selected: ['Fix the flake'] })) }
+        }
+        return { answers: [{ id: 'plan-review', selected: ['Approve'] }] }
+      },
+    })
+    const agent = ctx.agentLoop.create(SessionId('it-plan-form-loop'), { provider: 'mock', model: 'mock' })
+    ctx.planMode.set(agent, true)
+
+    const idle = waitForIdle(ctx, agent)
+    agent.followup(createUserMessage({ content: [{ type: 'text', text: 'plan it' }], source: { kind: 'user' } }))
+    await idle
+
+    const log = agent.session.events
+    const formRequest = findEvent(log, 'plan/form/request')
+    const formAnswer = findEvent(log, 'plan/form/answer')
+    expect(formRequest.type === 'plan/form/request' && formRequest.data.questions).toHaveLength(1)
+    expect(formAnswer.type === 'plan/form/answer' && formAnswer.data.outcome).toBe('answered')
+    const documents = log.filter(event => event.type === 'plan/document')
+    expect(documents).toHaveLength(3)
+    const proposed = documents[0]!
+    const approved = documents[1]!
+    const executing = documents[2]!
+    expect(proposed.type === 'plan/document' && proposed.data.status).toBe('proposed')
+    expect(approved.type === 'plan/document' && approved.data.status).toBe('approved')
+    expect(executing.type === 'plan/document' && executing.data.status).toBe('executing')
+    expect(approved.type === 'plan/document' && approved.data.sourceEventSeqs).toEqual([
+      formRequest.seq,
+      formAnswer.seq,
+      proposed.seq,
+    ])
+    expect(foldPlanMode(log)).toBe(false)
   })
 
   it('a mode flip at error settlement waits until the step after a same-step retry', async () => {

@@ -1,5 +1,7 @@
 /** Agent-preset vocabulary shared by discovery, mounting, and consumers. */
 
+import type { ScopeKey } from '@deepseek-ai/dsh-scope'
+
 /**
  * Where a preset's composition came from. A `system` preset ships with the
  * deployment; a `user` preset was authored locally, by a person or by an
@@ -46,6 +48,19 @@ export interface PresetRoot {
   path: string
   /** Trust recorded on every preset discovered under this root. */
   trust: PresetTrust
+}
+
+/**
+ * The read-side identity of one preset's standing mount, for callers that
+ * prove "this composition actually mounted" without creating an agent.
+ */
+export interface PresetStandingFacts {
+  /** The standing scope key readers pass to registry views. */
+  readonly key: ScopeKey
+  /** Stamp of the composition file this generation was mounted from. */
+  readonly stamp: { readonly mtimeMs: number; readonly size: number }
+  /** How many generations this preset id has mounted in this process. */
+  readonly generation: number
 }
 
 /** Plugin config: which preset is the default, and where presets live. */

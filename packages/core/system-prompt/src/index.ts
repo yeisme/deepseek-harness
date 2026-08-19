@@ -92,6 +92,12 @@ export interface AssembledSection {
   text: string
 }
 
+/**
+ * Which layer of the registry supplied one effective section: the
+ * context-global table, or some scope's own or inherited layer.
+ */
+export type SectionOrigin = 'global' | 'scoped'
+
 /** One resolved dynamic context contribution. */
 export interface AssembledContext {
   /** The contributing context's unique name. */
@@ -452,6 +458,26 @@ export class SystemPrompt extends Service {
       layer => layer.variables.insert(name, provider),
       { label: 'systemPrompt.variable()' },
     )
+  }
+
+  /**
+   * Attribute each effective section name to the layer that supplied it.
+   *
+   * Keyed exactly like an assembly's resolved sections: one entry per name
+   * the scope's assembly would carry, with the nearest supplying layer named
+   * as the origin — the same nearest-wins rule the assembly's shadow merge
+   * applies. A host reader with no agent passes a standing scope key (an
+   * agent preset's mount), the same addressing cold transcript reads use.
+   * @param scope - the viewing scope, or undefined for the global view.
+   * @returns effective section names mapped to their supplying layer.
+   */
+  sectionSources(scope?: ScopeKey): ReadonlyMap<string, SectionOrigin> {
+    const origins = new Map<string, SectionOrigin>()
+    for (const name of this.layers.global.sections.keys()) origins.set(name, 'global')
+    for (const layer of this.layers.chainLayers(scope)) {
+      for (const name of layer.sections.keys()) origins.set(name, 'scoped')
+    }
+    return origins
   }
 
   /**

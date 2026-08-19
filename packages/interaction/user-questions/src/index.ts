@@ -121,17 +121,21 @@ export class UserQuestionService extends Service {
     for (const question of request.questions) {
       const intent = question.intent
       if (intent === undefined) continue
-      if (!(question.options ?? []).some(option => option.label === intent.approve)) {
-        throw new UserQuestionError(
-          `question ${question.id} declares intent ${intent.kind} whose approve label `
-          + `${JSON.stringify(intent.approve)} names none of its options`,
-          'BAD_INTENT')
+      if (intent.kind === 'plan-review') {
+        if (!(question.options ?? []).some(option => option.label === intent.approve)) {
+          throw new UserQuestionError(
+            `question ${question.id} declares intent ${intent.kind} whose approve label `
+            + `${JSON.stringify(intent.approve)} names none of its options`,
+            'BAD_INTENT')
+        }
+        if (question.detail === undefined) {
+          throw new UserQuestionError(
+            `question ${question.id} declares intent ${intent.kind} without the detail it reviews`,
+            'BAD_INTENT')
+        }
       }
-      if (question.detail === undefined) {
-        throw new UserQuestionError(
-          `question ${question.id} declares intent ${intent.kind} without the detail it reviews`,
-          'BAD_INTENT')
-      }
+      // `plan-form` is presentation-only: any question shape is valid and the
+      // generic option flow can always render it.
     }
     if (this.provider === undefined) {
       throw new UserQuestionError('no user-questions provider is registered', 'NO_PROVIDER')

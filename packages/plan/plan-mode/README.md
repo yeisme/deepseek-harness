@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-Logged, per-agent plan collaboration state with deployment-owned guidance, direct `/plan [message]` entry and `/plan off` exit commands, and the reviewed `exit_plan_mode` exit. Plan mode is soft guidance; sandbox mode and approval policy enforce restrictions independently and do not read or write plan state.
+Logged, per-agent plan collaboration state with deployment-owned guidance, direct `/plan [message]` entry and `/plan off` exit commands, a structured `plan_form` clarification form, and the reviewed `exit_plan_mode` exit that persists each submitted plan as a whole-value `plan/document` event. Plan mode is soft guidance; sandbox mode and approval policy enforce restrictions independently and do not read or write plan state.
 
 ## Durable state
 
@@ -12,17 +12,19 @@ Logged, per-agent plan collaboration state with deployment-owned guidance, direc
 
 ## Model and human interactions
 
-While active, `plan:policy` renders the configured `section`. The plugin always registers `exit_plan_mode`, keeping tool schemas stable across the transition; its execute path accepts only active plan mode and leaves it only after an exact user approval through `ctx.userQuestions`.
+While active, `plan:policy` renders the configured `section`. The plugin always registers `exit_plan_mode` and `plan_form`, keeping tool schemas stable across the transition. `plan_form` asks the user one structured planning form (one or more questions, options, custom text) and logs the request/answer pair before returning the answers to the model. `exit_plan_mode` accepts only active plan mode, persists the submitted plan as `plan/document` (`proposed`), and leaves plan mode only after an exact user approval through `ctx.userQuestions`; approval or rejection appends the matching `plan/document` status.
 
 The review question declares the `plan-review` presentation intent, naming `Approve` as the label that approves it, so a capable UI presents the plan as a decision instead of a generic question; the answer the tool reads is the same either way. A dismissed review — the user closing the request to speak instead — is reported to the model as such, telling it to stay in plan mode and wait for the message; every other review failure keeps the seam's own message.
 
 When `ctx.commands` is composed, the package registers `/plan [message]` and reserves the exact argument `off` for direct exit. Bare `/plan` selects plan mode; any other non-empty argument selects it first and is then submitted through `agent.steer()`, so it becomes the next step's ordinary logged user message under plan guidance. `/plan off` selects inactive without sending model input; it also cancels a pending entry before plan mode reaches a request.
 
+When both `ctx.commands` and `ctx.permissionPresets` are composed, the package also registers the optional one-key bridge `/plan-readonly [message]`: it selects plan mode, switches the session permission preset to `read-only`, then submits the optional message under plan guidance. The bridge reads/writes permission state through `ctx.permissionPresets`, never through plan state itself.
+
 The Web client consumes the plugin-owned `/plan` command; other entry points may drive the same service directly without defining a second mode vocabulary.
 
 ## Session projection
 
-When the composition mounts `ctx.sessionProjections` ([`@deepseek-ai/dsh-session-projection`](../../session/session-projection/README.md)), this package registers the `plan` projection unit under an injected child. The unit folds two event kinds: a `command/run` record named `plan` with recorded `args` sets the wanted target (`off` → inactive, anything else → active), and `plan/mode` commits the logged state and clears it; every other event returns the same state reference. `view` derives `{ active, pending }`, where `pending` is true only while an outstanding selection differs from the logged state — a pure replay quantity, so host restarts, other tabs, and cold reads all recover it from the log alone (the `/plan` handler calls `set()` before any failing path, so a failed handler cannot leave a recorded command without its plan selection). The key merges into `SessionProjectionMap` from `src/types.ts` (served to host consumers via `./types` and client aggregates via `./client`); the framework drives the unit and carriers serve the value on the history tail page and the `session/projection` push frame. Compositions without the registry are unaffected.
+When the composition mounts `ctx.sessionProjections` ([`@deepseek-ai/dsh-session-projection`](../../session/session-projection/README.md)), this package registers the `plan` and `plan-document` projection units under an injected child. The unit folds two event kinds: a `command/run` record named `plan` with recorded `args` sets the wanted target (`off` → inactive, anything else → active), and `plan/mode` commits the logged state and clears it; every other event returns the same state reference. `view` derives `{ active, pending }`, where `pending` is true only while an outstanding selection differs from the logged state — a pure replay quantity, so host restarts, other tabs, and cold reads all recover it from the log alone (the `/plan` handler calls `set()` before any failing path, so a failed handler cannot leave a recorded command without its plan selection). The key merges into `SessionProjectionMap` from `src/types.ts` (served to host consumers via `./types` and client aggregates via `./client`); the framework drives the unit and carriers serve the value on the history tail page and the `session/projection` push frame. Compositions without the registry are unaffected.
 
 ## Configuration
 
@@ -80,6 +82,12 @@ The user block is append-only conversation growth. Entering or leaving plan mode
 #### What the model sees
 
 The [`exit_plan_mode` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-mode) remains available in both states; execution outside plan mode fails, while an approved in-mode review returns the canonical `{ approved: true }` value and renders the existing confirmation text. Rejection remains a failed call carrying review feedback, and a dismissed review a failed call naming the user's takeover.
+
+### Planning form
+
+#### What the model sees
+
+The [`plan_form` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-form) is available in both states; execution outside plan mode fails. In plan mode it sends one form of questions to the user and returns the structured answers. Every form round is logged as `plan/form/request` + `plan/form/answer`; the final `plan/document` cites their event seqs in `sourceEventSeqs`.
 
 #### Token effect
 

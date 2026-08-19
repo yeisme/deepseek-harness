@@ -15,6 +15,10 @@ export const zh = {
   'plan.approve': '确认执行',
   'plan.decline': '拒绝',
   'plan.discuss': '去聊天里说',
+  'form.title': '规划表单',
+  'form.subtitle': '请填写以下规划信息',
+  'form.progress': '第 {index} / {count} 题',
+  'form.submit': '提交规划表单',
 } satisfies Record<string, string>
 
 /** The question namespace key union. */
@@ -35,4 +39,8 @@ export const en = {
   'plan.approve': 'Approve',
   'plan.decline': 'Refuse',
   'plan.discuss': 'Chat about it',
+  'form.title': 'Planning form',
+  'form.subtitle': 'Fill in the planning details below',
+  'form.progress': 'Step {index} of {count}',
+  'form.submit': 'Submit plan form',
 } satisfies Record<QuestionKey, string>

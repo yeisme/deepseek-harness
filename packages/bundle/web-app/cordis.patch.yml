@@ -13,14 +13,60 @@
 
 # ── surface-specific values the base deliberately omits ─────────────────────
 
+# Coding-model routes exposed by the Web model picker. The pi-ai catalog owns
+# Codex and Kimi's native wire protocols; GLM uses the Anthropic-compatible
+# endpoint used by the Claude Code configuration. DSH resolves only credential
+# references at request time and never reads a CLI secret file into this patch.
+- id: llm-pi-ai
+  config:
+    providers:
+      openai-codex:
+        displayName: OpenAI Codex
+        apiKeyEnv: OPENAI_API_KEY
+        models:
+          - id: gpt-5.6-luna
+      glm-claude-code:
+        displayName: GLM-5.2 (Claude Code)
+        apiKeyEnv: ANTHROPIC_AUTH_TOKEN
+        authMode: bearer
+        api: anthropic-messages
+        baseURL: https://open.bigmodel.cn/api/anthropic
+        models:
+          - id: glm-5.2[1m]
+            name: GLM-5.2 (1M)
+            contextWindow: 1000000
+            maxTokens: 131072
+      kimi-coding:
+        displayName: Kimi Code
+        apiKeyEnv: KIMI_API_KEY
+        models:
+          - id: k3
+
 - id: system-prompt
   config:
     persona: >-
       You are a coding agent powered by the {{model}} model. Your working directory is {{cwd}}.
 
-# TODO: Re-enable shared HMR for Web after its reload lifecycle is tested.
+# Host-plugin HMR is opt-in for Web. Set DSH_WEB_HMR=1 to enable shared
+# module reload; DSH_PLUGIN_DEV_ROOT can point at a plugin checkout so file
+# edits there hot-reload without killing the server. It stays off by default
+# because the full reload lifecycle is not yet covered by the published Web
+# e2e suite.
 - id: hmr
-  disabled: true
+  disabled: !!js process.env.DSH_WEB_HMR !== '1'
+  config:
+    root: !!js >
+      ['.', ...(process.env.DSH_PLUGIN_DEV_ROOT ? [process.env.DSH_PLUGIN_DEV_ROOT] : [])]
+    followSymlinks: false
+    ignored:
+      - '**/node_modules/**'
+      - '**/node_modules'
+      - '**/.*'
+      - cache
+      - data
+      - temp
+      - dist
+      - build
 
 # Full-text session search is opt-in (the base row's `openAt: never`). This
 # restatement keeps the Web values on one ephemeral in-memory index; a

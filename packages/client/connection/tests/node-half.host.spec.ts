@@ -10,7 +10,10 @@ import type { ApiProxy } from '@deepseek-ai/dsh-host-apiproxy/api'
 import type { AttachmentStore } from '@deepseek-ai/dsh-attachment'
 import { RpcId, type ClientRequest } from '@deepseek-ai/dsh-host-apiproxy/api'
 import type { WebServer, WebRoute, WebUpgradeRoute } from '@deepseek-ai/dsh-host-webserver'
-import { API_PATH, apply, HOST_EVENTS_PATH, inject, MUX_EVENTS_PATH, type HostConnectionHandle } from '../src/index.ts'
+import {
+  API_PATH, apply, HOST_EVENTS_PATH, inject, MUX_EVENTS_PATH,
+  type AccessTicketBinding, type AccessTicketVerifier, type HostConnectionHandle,
+} from '../src/index.ts'
 
 /** Structural webServer fake recording both route registries. */
 function fakeHttpServer(
@@ -74,7 +77,32 @@ function fakeResponse(): { response: ServerResponse; state: { status?: number; b
   return { response, state }
 }
 
-async function mounted(config?: { trustedHosts?: string[] }): Promise<{
+function accessTicketVerifier(result: AccessTicketBinding | undefined): AccessTicketVerifier {
+  return {
+    verify: async () => result === undefined ? { ok: false } : { ok: true, binding: result },
+  }
+}
+
+function accessTicketBinding(): AccessTicketBinding {
+  return {
+    sid: 'sid' as AccessTicketBinding['sid'],
+    principal: 'principal' as AccessTicketBinding['principal'],
+    tenant: 'tenant' as AccessTicketBinding['tenant'],
+    workspace: 'workspace' as AccessTicketBinding['workspace'],
+    runtimeRef: 'runtime' as AccessTicketBinding['runtimeRef'],
+    runtimeGeneration: 'runtime-generation' as AccessTicketBinding['runtimeGeneration'],
+    connectionGeneration: 'connection-generation' as AccessTicketBinding['connectionGeneration'],
+    audience: 'dsh-web-canary',
+    origin: 'http://127.0.0.1:3080',
+    expiresAt: Date.now() + 60_000,
+    jti: 'jti' as AccessTicketBinding['jti'],
+  }
+}
+
+async function mounted(config?: {
+  trustedHosts?: string[]
+  accessTicket?: { audience: string; verifier: AccessTicketVerifier }
+}): Promise<{
   routes: WebRoute[]
   upgrades: WebUpgradeRoute[]
   dispose: () => Promise<void>
@@ -210,6 +238,45 @@ describe('connection node half', () => {
       host: 'harness.example:3080', origin: 'http://harness.example:3080', 'sec-fetch-site': 'same-origin',
     }), declared.response)
     expect(declared.state.status).toBe(404)
+    await dispose()
+  })
+
+  it('keeps local mode unchanged unless an enterprise verifier is configured', async () => {
+    const local = await mounted()
+    const localResponse = fakeResponse()
+    await local.routes[0]!.handler(fakeRequest({ host: '127.0.0.1:3080' }), localResponse.response)
+    expect(localResponse.state.status).toBe(404)
+    await local.dispose()
+
+    const secured = await mounted({
+      accessTicket: { audience: 'dsh-web-canary', verifier: accessTicketVerifier(accessTicketBinding()) },
+    })
+    const denied = fakeResponse()
+    await secured.routes[0]!.handler(fakeRequest({ host: '127.0.0.1:3080' }), denied.response)
+    expect(denied.state).toMatchObject({ status: 403, body: 'forbidden' })
+    const accepted = fakeResponse()
+    await secured.routes[0]!.handler(fakeRequest({
+      host: '127.0.0.1:3080', origin: 'http://127.0.0.1:3080', 'x-dsh-access-ticket': 'opaque',
+    }), accepted.response)
+    expect(accepted.state.status).toBe(404)
+    await secured.dispose()
+  })
+
+  it('applies the same enterprise ticket gate before both WebSocket handshakes', async () => {
+    const { upgrades, dispose } = await mounted({
+      accessTicket: { audience: 'dsh-web-canary', verifier: accessTicketVerifier(accessTicketBinding()) },
+    })
+    for (const upgrade of upgrades) {
+      const socket = new PassThrough()
+      const chunks: Buffer[] = []
+      socket.on('data', (chunk: Buffer) => { chunks.push(chunk) })
+      const ended = once(socket, 'end')
+      await upgrade.handler(fakeRequest({
+        host: '127.0.0.1:3080', origin: 'http://127.0.0.1:3080',
+      }, upgrade.path), socket, Buffer.alloc(0))
+      await ended
+      expect(Buffer.concat(chunks).toString()).toContain('HTTP/1.1 403 Forbidden')
+    }
     await dispose()
   })
 

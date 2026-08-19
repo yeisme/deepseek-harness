@@ -84,6 +84,32 @@ export function planReviewOf(questions: readonly QuestionItem[]): PlanReview | u
   }
 }
 
+/** A `plan-form` request's optional form chrome. */
+export interface PlanForm {
+  /** Optional asker-provided form heading. */
+  title?: string
+  /** Optional associated persisted plan id. */
+  planId?: string
+}
+
+/**
+ * Narrow a request to the `plan-form` presentation intent. Unlike plan review,
+ * the form intent is only chrome: the generic question flow stays answerable
+ * for any question batch, so the narrowing is best-effort and returns
+ * undefined only when the first question does not declare the intent.
+ *
+ * @param questions - the request's whole question batch.
+ * @returns The form chrome, or undefined when the generic flow owns it.
+ */
+export function planFormOf(questions: readonly QuestionItem[]): PlanForm | undefined {
+  const intent = (questions[0] as QuestionItem | undefined)?.intent
+  if (intent?.kind !== 'plan-form') return undefined
+  return {
+    ...intent.title === undefined ? {} : { title: intent.title },
+    ...intent.planId === undefined ? {} : { planId: intent.planId },
+  }
+}
+
 /**
  * Question domain face over the carrier: render identity and questions
  * transparently forwarded; answer/cancel own the wire encoding (the success

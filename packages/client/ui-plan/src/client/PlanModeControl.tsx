@@ -12,14 +12,17 @@ export type PlanChipProps =
   PropsRuntime<'conversation.input.plan'> & InjectFace<PlanChipInjected> & PropsLocale<'plan'>
 
 /**
- * Plan-mode status over the host-computed `plan` projection. The chip renders
- * only while the effective target is plan mode (`pending ? !active : active`
- * — a folded host value, not client optimism) and executes /plan off.
+ * Plan-mode status over the host-computed `plan` projection. The seat renders
+ * an active warn chip while the effective target is plan mode
+ * (`pending ? !active : active` — a folded host value, not client optimism)
+ * and a neutral entry chip while the effective target is the default mode.
+ * A pending exit leaves no control until the projection confirms the switch.
  */
-export function PlanChip({ useProjection, locked, exitPlanMode, t }: PlanChipProps) {
+export function PlanChip({ useProjection, locked, exitPlanMode, enterPlanMode, t }: PlanChipProps) {
   const plan = useProjection('plan')
-  const [leaving, setLeaving] = useState(false)
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorLabel, setErrorLabel] = useState('')
   const aliveRef = useRef(true)
 
   useEffect(() => {
@@ -31,20 +34,26 @@ export function PlanChip({ useProjection, locked, exitPlanMode, t }: PlanChipPro
 
   if (plan === undefined) return null
   const target = plan.pending ? !plan.active : plan.active
-  if (!target) return null
+  // A pending exit is an in-flight /plan off; keep the seat empty until the
+  // projection lands so the user cannot fight the switch they just requested.
+  if (plan.pending && !target) return null
 
-  const off = (): void => {
-    // No leaving/locked guard: both disable the button, so no click arrives.
-    setLeaving(true)
+  const run = (action: () => Promise<string | null>, failureLabel: string): void => {
+    // No busy/locked guard: both disable the button, so no click arrives.
+    setBusy(true)
     setError(null)
-    void exitPlanMode().then((failure) => {
+    void action().then((failure) => {
       if (!aliveRef.current) return
-      setLeaving(false)
-      setError(failure)
+      setBusy(false)
+      if (failure !== null) {
+        setError(failure)
+        setErrorLabel(failureLabel)
+      }
     }, (reason: unknown) => {
       if (!aliveRef.current) return
-      setLeaving(false)
+      setBusy(false)
       setError(reason instanceof Error ? reason.message : String(reason))
+      setErrorLabel(failureLabel)
     })
   }
 
@@ -52,20 +61,25 @@ export function PlanChip({ useProjection, locked, exitPlanMode, t }: PlanChipPro
     <span className={css.wrap}>
       <button
         type="button"
-        className={css.chip}
-        aria-label={t('chip.on.aria')}
-        title={t('chip.on.title')}
-        disabled={locked || leaving}
-        onClick={off}
+        className={target ? css.chip : `${css.chip} ${css.chipOff}`}
+        aria-label={target ? t('chip.on.aria') : t('chip.off.aria')}
+        title={target ? t('chip.on.title') : t('chip.off.title')}
+        disabled={locked || busy}
+        onClick={() => {
+          if (target) run(exitPlanMode, 'failed to exit plan mode')
+          else run(enterPlanMode, 'failed to enter plan mode')
+        }}
       >
         {/* Design literal, not copy: the chip wordmark stays 'Plan' in every locale. */}
         Plan
-        <span className={css.close} aria-hidden>
-          <IconCloseFill14 size={12} />
-        </span>
+        {target && (
+          <span className={css.close} aria-hidden>
+            <IconCloseFill14 size={12} />
+          </span>
+        )}
       </button>
       {/* Failure copy stays English (error-surface policy: not localized). */}
-      {error !== null && <span className={css.error} role="status" title={error}>failed to exit plan mode</span>}
+      {error !== null && <span className={css.error} role="status" title={error}>{errorLabel}</span>}
     </span>
   )
 }

@@ -20,7 +20,11 @@ const SID = 's1' as SessionId
 
 /** Seat stub over a dictionary pair mirroring the real lookup chain: package dictionary, then common vocabulary, then the key. */
 const seatOver = (dict: Record<string, string>, common: Record<string, string>): QuestionComposerProps['t'] =>
-  (key => dict[key] ?? common[key] ?? key)
+  (key, params) => {
+    const template = dict[key] ?? common[key] ?? key
+    if (params === undefined) return template
+    return template.replace(/\{(\w+)\}/g, (match, name: string) => name in params ? String(params[name]) : match)
+  }
 
 /** Framework standard-kit stubs: the composer consumes only the locale seat;
  *  the composed props type mandates delivery of the rest (framework hooks are
@@ -305,6 +309,33 @@ describe('PendingQuestion domain face', () => {
     const question = new PendingQuestion(wait('rk').carrier)
     expect(question.key).toBe('q:rk')
     expect(question.questions).toBe(wait('rk').carrier.payload.questions)
+  })
+
+  it('renders plan-form intents as one form with all fields visible and submits one batch', async () => {
+    const questions = [
+      { id: 'q1', question: '目标是什么？', header: '目标', intent: { kind: 'plan-form' as const, title: '规划表单', planId: 'plan-1' } },
+      { id: 'q2', question: '什么时候交付？', intent: { kind: 'plan-form' as const, title: '规划表单', planId: 'plan-1' } },
+    ]
+    const respond = vi.fn(() => Promise.resolve<RpcReceipt>({ accepted: true }))
+    const carrier = new PendingWait(
+      'question', RpcId('plan-form-1'), SID, { questions }, respond)
+    render(<QuestionComposer matched={carrier} interactions={[carrier]} {...kit} />)
+
+    expect(screen.getByText('规划表单')).toBeTruthy()
+    expect(screen.getByText('请填写以下规划信息')).toBeTruthy()
+    expect(screen.getByText('目标是什么？')).toBeTruthy()
+    expect(screen.getByText('什么时候交付？')).toBeTruthy()
+    expect(screen.getAllByPlaceholderText('输入你的答案')).toHaveLength(2)
+
+    const fields = screen.getAllByPlaceholderText('输入你的答案')
+    fireEvent.change(fields[0]!, { target: { value: '完成测试覆盖' } })
+    fireEvent.change(fields[1]!, { target: { value: '本周五' } })
+    fireEvent.click(screen.getByRole('button', { name: '提交规划表单' }))
+
+    expect(respond).toHaveBeenCalledWith(answeredEnvelope('plan-form-1', [
+      { id: 'q1', selected: [], custom: '完成测试覆盖' },
+      { id: 'q2', selected: [], custom: '本周五' },
+    ]))
   })
 })
 

@@ -207,6 +207,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the standing scope key readers pass as a registry view scope.',
         throws: ['when the preset is unknown or its composition is unusable.'],
       },
+      {
+        signature: 'async standingFactsFor(id?: string): Promise<PresetStandingFacts>',
+        description: 'The standing mount\'s read-side identity: its scope key, the composition file stamp of the mounted generation, and how many generations this process has mounted for the id.\n\nThe one derivation behind standingKeyFor, so a caller proving a mount (a composition preview) and a caller only addressing registry views can never disagree about which mount answered.',
+        parameters: [{ name: 'id', description: 'the preset id, or `undefined` for {@link defaultId}.' }],
+        returns: 'the mount\'s scope key, file stamp, and generation.',
+        throws: ['when the preset is unknown or its composition is unusable.'],
+      },
     ],
   },
   {
@@ -1113,6 +1120,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the exact disposer that unregisters this unit.',
       },
       {
+        signature: 'attributions(): ReadonlyMap<string, ReadonlySet<ScopeKey | undefined>>',
+        description: 'Attribute every live unit key to the scopes that registered it.\n\nA detached point-in-time copy: a key maps to the set of registration scopes holding it, where an absent scope means a context-global registrant. Read-side callers (a composition preview naming the units a preset contributes) compare the set against their own scope key.',
+        parameters: [],
+        returns: 'unit keys mapped to their live registration scopes.',
+      },
+      {
         signature: 'onChanged(listener: ProjectionChangeListener): () => void',
         description: 'Subscribe to the change feed. The registration is an effect on the calling context\'s fiber.',
         parameters: [{ name: 'listener', description: 'called once per unit whose state reference changed, per committed event.' }],
@@ -1729,6 +1742,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the exact Cordis effect disposer.',
       },
       {
+        signature: 'sectionSources(scope?: ScopeKey): ReadonlyMap<string, SectionOrigin>',
+        description: 'Attribute each effective section name to the layer that supplied it.\n\nKeyed exactly like an assembly\'s resolved sections: one entry per name the scope\'s assembly would carry, with the nearest supplying layer named as the origin — the same nearest-wins rule the assembly\'s shadow merge applies. A host reader with no agent passes a standing scope key (an agent preset\'s mount), the same addressing cold transcript reads use.',
+        parameters: [{ name: 'scope', description: 'the viewing scope, or undefined for the global view.' }],
+        returns: 'effective section names mapped to their supplying layer.',
+      },
+      {
         signature: 'async assemble(context: AssembleContext = {}): Promise<PromptAssembly>',
         description: 'Assemble global and scoped providers, detach tool parameters, apply canonical ordering, then run the assembly waterfall. Scoped sections and variables shadow globals. The returned waterfall value is authoritative except that an effective complete section is restored afterwards as the sole prompt section.',
         parameters: [{ name: 'context', description: 'the optional scope and plugin-defined assembly fields.' }],
@@ -1924,6 +1943,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Project visible definitions onto the allowlisted model-facing schema fields, excluding execution and presentation callbacks.',
         parameters: [{ name: 'scope', description: 'the viewing scope (the agent); omitted = the global view.' }],
         returns: 'one deep-cloned schema per visible tool.',
+      },
+      {
+        signature: 'sources(scope?: ScopeKey): ReadonlyMap<string, ToolOrigin>',
+        description: 'Attribute each visible tool name to the registry layer that supplied it.\n\nKeyed exactly like schemas: one entry per visible tool, so a reader composing the two answers one composition fact — what the scope sees AND which layer it came from. A host reader with no agent passes a standing scope key (an agent preset\'s mount), the same addressing cold transcript reads use.',
+        parameters: [{ name: 'scope', description: 'the viewing scope (the agent), or undefined for the global view.' }],
+        returns: 'visible tool names mapped to their supplying layer.',
       },
       {
         signature: 'executionMode(exec: ToolExecutionInput): ToolExecutionMode',
@@ -2675,7 +2700,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AskUserQuestionIntent',
-    declaration: 'export type AskUserQuestionIntent = {\n    kind: \'plan-review\';\n    approve: string;\n};',
+    declaration: 'export type AskUserQuestionIntent = {\n    kind: \'plan-review\';\n    approve: string;\n} | {\n    kind: \'plan-form\';\n    title?: string;\n    planId?: string;\n};',
   },
   {
     name: 'AskUserQuestionItem',
@@ -3502,6 +3527,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PresetSpec {\n    sandbox: SandboxMode;\n    approval: ApprovalPolicy;\n    name?: string;\n    description?: string;\n}',
   },
   {
+    name: 'PresetStandingFacts',
+    declaration: 'export interface PresetStandingFacts {\n    readonly key: ScopeKey;\n    readonly stamp: {\n        readonly mtimeMs: number;\n        readonly size: number;\n    };\n    readonly generation: number;\n}',
+  },
+  {
     name: 'PresetTrust',
     declaration: 'export type PresetTrust = \'system\' | \'user\';',
   },
@@ -3716,6 +3745,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SearchResultView',
     declaration: 'export type SearchResultView = SearchMatchesResultView | SearchPathsResultView;',
+  },
+  {
+    name: 'SectionOrigin',
+    declaration: 'export type SectionOrigin = \'global\' | \'scoped\';',
   },
   {
     name: 'ServerResponse',
@@ -4231,7 +4264,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SystemPrompt',
-    declaration: 'export class SystemPrompt extends Service {\n    static Config: z<Config>;\n    constructor(ctx: Context, config: Config);\n    section(section: PromptSection): () => void;\n    context(context: PromptContext): () => void;\n    suppressRuntimeContext(): () => void;\n    tools(provider: (context: AssembleContext) => ToolProviderResult): () => void;\n    variable(name: string, provider: (context: AssembleContext) => string | undefined): () => void;\n    async assemble(context: AssembleContext = {}): Promise<PromptAssembly>;\n}',
+    declaration: 'export class SystemPrompt extends Service {\n    static Config: z<Config>;\n    constructor(ctx: Context, config: Config);\n    section(section: PromptSection): () => void;\n    context(context: PromptContext): () => void;\n    suppressRuntimeContext(): () => void;\n    tools(provider: (context: AssembleContext) => ToolProviderResult): () => void;\n    variable(name: string, provider: (context: AssembleContext) => string | undefined): () => void;\n    sectionSources(scope?: ScopeKey): ReadonlyMap<string, SectionOrigin>;\n    async assemble(context: AssembleContext = {}): Promise<PromptAssembly>;\n}',
   },
   {
     name: 'TableKeyOf',
@@ -4402,6 +4435,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ToolMessageSource {\n    kind: \'tool\';\n    callId: CallId;\n}',
   },
   {
+    name: 'ToolOrigin',
+    declaration: 'export type ToolOrigin = \'global\' | \'scoped\' | \'transport\';',
+  },
+  {
     name: 'ToolOutputDefinition',
     declaration: 'export interface ToolOutputDefinition {\n    readonly schema: JsonSchemaNode;\n    render(args: unknown, value: JsonValue): ContentBlock[];\n    presentationMeta?(args: unknown, value: JsonValue): JsonValue;\n}',
   },
@@ -4439,7 +4476,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'ToolRuntime',
-    declaration: 'export class ToolRuntime extends Service {\n    static inject;\n    static Config: z<Config>;\n    readonly [TOOL_RUNTIME_SCHEDULER]: ToolRuntimeScheduler;\n    constructor(ctx: Context, config: Config = {});\n    presentAs(mode: ToolPresentationMode): () => void;\n    register(definition: ToolDefinition): () => void;\n    restrict(filter: ToolRestriction): () => void;\n    guard(guard: ToolGuard): () => void;\n    get(name: string, scope?: ScopeKey): ToolDefinition | undefined;\n    schemas(scope?: ScopeKey): ToolSchema[];\n    executionMode(exec: ToolExecutionInput): ToolExecutionMode;\n    async execute(exec: ToolExecutionInput): Promise<ToolExecutionResult>;\n}',
+    declaration: 'export class ToolRuntime extends Service {\n    static inject;\n    static Config: z<Config>;\n    readonly [TOOL_RUNTIME_SCHEDULER]: ToolRuntimeScheduler;\n    constructor(ctx: Context, config: Config = {});\n    presentAs(mode: ToolPresentationMode): () => void;\n    register(definition: ToolDefinition): () => void;\n    restrict(filter: ToolRestriction): () => void;\n    guard(guard: ToolGuard): () => void;\n    get(name: string, scope?: ScopeKey): ToolDefinition | undefined;\n    schemas(scope?: ScopeKey): ToolSchema[];\n    sources(scope?: ScopeKey): ReadonlyMap<string, ToolOrigin>;\n    executionMode(exec: ToolExecutionInput): ToolExecutionMode;\n    async execute(exec: ToolExecutionInput): Promise<ToolExecutionResult>;\n}',
   },
   {
     name: 'ToolRuntimeScheduler',

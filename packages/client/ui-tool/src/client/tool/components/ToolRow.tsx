@@ -188,11 +188,22 @@ export function ToolRow({
   // The code variant's program renders through CodeBlock (shiki), so only its
   // output joins the IN/OUT card; every other variant's input does too.
   const cardBody = variant === 'code' ? null : body
+  // Category is a superset of the row variant: web retrieval and MCP calls get
+  // their own visual identity without changing the generic row mechanics.
+  const category = toolName === 'web_search' || toolName === 'web_fetch'
+    ? 'web'
+    : toolName?.startsWith('mcp__') ? 'mcp' : variant
   // The state substitution rides the idle icon slot, so an expandable error
   // row keeps DisclosureRow's icon→chevron hover preview (its default) instead
   // of losing it with the icon.
   return (
-    <div className={css.root} data-variant={variant} data-tool={toolName} data-state={state}>
+    <div
+      className={css.root}
+      data-variant={variant}
+      data-tool={toolName}
+      data-category={category}
+      data-state={state}
+    >
       {status !== null && <span className={css.visuallyHidden}>{status}</span>}
       <DisclosureRow
         rowClassName={css.row}

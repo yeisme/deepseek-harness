@@ -6,6 +6,7 @@
     "tsBuildInfoFile": "lib/tsconfig.host.tsbuildinfo"
   },
   "files": [
+    "src/access-ticket.ts",
     "src/api-path.ts",
     "src/api-request-trust.ts",
     "src/http-bridge.ts",
@@ -19,6 +20,9 @@
   "references": [
     {
       "path": "../../attachment/attachment"
+    },
+    {
+      "path": "../../util/brand"
     },
     {
       "path": "../../host/apiproxy"

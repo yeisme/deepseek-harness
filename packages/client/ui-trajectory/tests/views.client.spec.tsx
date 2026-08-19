@@ -576,6 +576,61 @@ describe('tab switching in ConversationRoot', () => {
     expect(screen.getByRole('complementary', { name: 'Event details' })).toBeTruthy()
   })
 
+  it('filters the trajectory ledger by read/write/MCP category toggles', async () => {
+    const nodes = [
+      { kind: 'user', seq: 1, time: 1_000, content: [], source: null },
+      {
+        kind: 'assistant', seq: 2, time: 2_000, turn: 1, step: 1, blocks: [],
+        timing: { stepStartTime: 1_800, firstTokenTime: 1_900, completedTime: 2_000 },
+      },
+      {
+        kind: 'tool-result', seq: 3, time: 3_000, callId: 'r1',
+        call: { name: 'read', argsRaw: '{"path":"a"}' }, callTime: 2_200,
+        content: [], isError: false, callView: null, resultView: null,
+      },
+      {
+        kind: 'tool-result', seq: 4, time: 4_000, callId: 'w1',
+        call: { name: 'write', argsRaw: '{"path":"b"}' }, callTime: 3_200,
+        content: [], isError: false, callView: null, resultView: null,
+      },
+      {
+        kind: 'tool-result', seq: 5, time: 5_000, callId: 'm1',
+        call: { name: 'mcp__github__create_issue', argsRaw: '{}' }, callTime: 4_200,
+        content: [], isError: false, callView: null, resultView: null,
+      },
+      {
+        kind: 'assistant', seq: 6, time: 6_000, turn: 1, step: 2, blocks: [],
+        timing: { stepStartTime: 5_500, firstTokenTime: 5_700, completedTime: 6_000 },
+      },
+    ] as unknown as ConversationSnapshot['nodes']
+    const b = await bench(historySnapshot(nodes))
+    mount(b.slots, nodes)
+    fireEvent.click(screen.getByRole('tab', { name: 'Trajectory' }))
+
+    expect(screen.getByRole('row', { name: /TOOL, read/ })).toBeTruthy()
+    expect(screen.getByRole('row', { name: /TOOL, write/ })).toBeTruthy()
+    expect(screen.getByRole('row', { name: /TOOL, mcp__github__create_issue/ })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '读取' }))
+    expect(screen.getByRole('row', { name: /TOOL, read/ })).toBeTruthy()
+    expect(screen.queryByRole('row', { name: /TOOL, write/ })).toBeNull()
+    expect(screen.queryByRole('row', { name: /TOOL, mcp__github__create_issue/ })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '写入' }))
+    expect(screen.getByRole('row', { name: /TOOL, read/ })).toBeTruthy()
+    expect(screen.getByRole('row', { name: /TOOL, write/ })).toBeTruthy()
+    expect(screen.queryByRole('row', { name: /TOOL, mcp__github__create_issue/ })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '读取' }))
+    expect(screen.queryByRole('row', { name: /TOOL, read/ })).toBeNull()
+    expect(screen.getByRole('row', { name: /TOOL, write/ })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '全部' }))
+    expect(screen.getByRole('row', { name: /TOOL, read/ })).toBeTruthy()
+    expect(screen.getByRole('row', { name: /TOOL, write/ })).toBeTruthy()
+    expect(screen.getByRole('row', { name: /TOOL, mcp__github__create_issue/ })).toBeTruthy()
+  })
+
   it('empty window keeps the toolbar and reports no timing data', async () => {
     const b = await bench(historySnapshot([]))
     mount(b.slots)
