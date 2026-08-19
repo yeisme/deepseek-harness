@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-13-enterprise-access-ticket-transport-canary.md
+2026-08-13-enterprise-access-ticket-transport-canary.md: 137e2be7b59ba4399f033d4af83b82b0c5afb224
+2026-08-13-enterprise-access-ticket-transport-canary.zh.md: f065774ab1ed4e51c66d82865a77f61971be1959

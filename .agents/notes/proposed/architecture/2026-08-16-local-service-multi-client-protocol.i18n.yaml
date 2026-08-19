@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/proposed/architecture/2026-08-16-local-service-multi-client-protocol.md
+2026-08-16-local-service-multi-client-protocol.md: 191b5de0d8443ab6e19093eff71c19909b8d7d4b
+2026-08-16-local-service-multi-client-protocol.zh.md: f600df8645966ddf5357af11a58dbd60f6623f3b

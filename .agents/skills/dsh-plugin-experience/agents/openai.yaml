@@ -1,0 +1,4 @@
+interface:
+  display_name: "DSH Plugin Experience"
+  short_description: "Design safe DSH Web plugin surfaces"
+  default_prompt: "Use $dsh-plugin-experience when building a DeepSeek Harness client module, bundle, ToolView, or operational UI."

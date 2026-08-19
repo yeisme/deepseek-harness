@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-16-omdsh-cli-tui-entry.md
+2026-08-16-omdsh-cli-tui-entry.md: 449eab148dc4a7170247e66ff090a035030af014
+2026-08-16-omdsh-cli-tui-entry.zh.md: 0e275eef3782aa1813a6b75b3d529ec621cf69b5

@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-08-16-claude-compatible-tui-interaction.md
+2026-08-16-claude-compatible-tui-interaction.md: 52a88756c585d102f673c59caca54d5de089b134
+2026-08-16-claude-compatible-tui-interaction.zh.md: 796d3c28476a36ca0b91a226ef6b6267d34411c0
