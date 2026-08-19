@@ -1,0 +1,995 @@
+
+$ CI=1 pnpm exec vitest run packages/client/connection/tests/access-ticket*.spec.ts
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+
+
+$ CI=1 pnpm run typecheck
+$ npm run build:lib:host && npm run typecheck:contracts-ready
+npm notice run @deepseek-ai/dsh-root@0.1.0-rc.5 build:lib:host
+npm notice run tsc -b tsconfig.host.json && tsdown --env.DSH_BUILD_FACE host
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `dsh-typert-generator`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (58%)
+  - tsdown:deps (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (51%)
+  - dsh-typert-generator (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (52%)
+  - dsh-typert-generator (29%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (49%)
+  - tsdown:deps (31%)
+  - dsh-typert-generator (20%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (49%)
+  - dsh-typert-generator (34%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (47%)
+  - dsh-typert-generator (33%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (50%)
+  - dsh-typert-generator (36%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (49%)
+  - dsh-typert-generator (33%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (49%)
+  - dsh-typert-generator (33%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (52%)
+  - dsh-typert-generator (31%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (61%)
+  - dsh-typert-generator (36%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (58%)
+  - dsh-typert-generator (33%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (50%)
+  - tsdown:deps (29%)
+  - dsh-typert-generator (21%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (43%)
+  - tsdown:deps (40%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (44%)
+  - dsh-typert-generator (31%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (47%)
+  - dsh-typert-generator (33%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (44%)
+  - dsh-typert-generator (31%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (47%)
+  - dsh-typert-generator (44%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (42%)
+  - tsdown:deps (26%)
+  - dsh-typert-generator (26%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (53%)
+  - dsh-typert-generator (32%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (40%)
+  - tsdown:report (34%)
+  - tsdown:deps (26%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (61%)
+  - tsdown:report (26%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (40%)
+  - tsdown:report (32%)
+  - dsh-typert-generator (26%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (41%)
+  - tsdown:report (35%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (46%)
+  - tsdown:report (40%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:shebang (43%)
+  - dsh-typert-generator (30%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (44%)
+  - tsdown:report (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (44%)
+  - tsdown:report (43%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (43%)
+  - dsh-typert-generator (24%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (41%)
+  - dsh-typert-generator (38%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (42%)
+  - dsh-typert-generator (30%)
+  - tsdown:css-guard (23%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (42%)
+  - dsh-typert-generator (41%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (47%)
+  - dsh-typert-generator (35%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (42%)
+  - tsdown:deps (29%)
+  - dsh-typert-generator (29%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (47%)
+  - dsh-typert-generator (33%)
+  - tsdown:deps (20%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (43%)
+  - dsh-typert-generator (32%)
+  - tsdown:deps (25%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (43%)
+  - dsh-typert-generator (32%)
+  - tsdown:deps (25%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (42%)
+  - dsh-typert-generator (32%)
+  - tsdown:deps (25%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (46%)
+  - dsh-typert-generator (35%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (45%)
+  - dsh-typert-generator (41%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (45%)
+  - dsh-typert-generator (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (44%)
+  - dsh-typert-generator (41%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (50%)
+  - tsdown:report (44%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (46%)
+  - tsdown:report (41%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (50%)
+  - tsdown:report (46%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (49%)
+  - tsdown:report (46%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (48%)
+  - tsdown:report (44%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (50%)
+  - tsdown:report (47%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (46%)
+  - tsdown:report (44%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (47%)
+  - tsdown:report (44%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (48%)
+  - tsdown:report (43%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (39%)
+  - dsh-typert-generator (36%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (50%)
+  - tsdown:report (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (43%)
+  - dsh-typert-generator (38%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (45%)
+  - tsdown:report (42%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (38%)
+  - dsh-typert-generator (34%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (40%)
+  - dsh-typert-generator (36%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (44%)
+  - tsdown:deps (29%)
+  - dsh-typert-generator (26%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (33%)
+  - tsdown:deps (33%)
+  - tsdown:report (27%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (37%)
+  - tsdown:report (31%)
+  - tsdown:deps (22%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (45%)
+  - dsh-typert-generator (45%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (45%)
+  - tsdown:report (40%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (54%)
+  - tsdown:css-guard (23%)
+  - tsdown:deps (21%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (42%)
+  - tsdown:report (41%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (42%)
+  - tsdown:report (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (37%)
+  - tsdown:report (34%)
+  - tsdown:deps (24%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (43%)
+  - tsdown:report (42%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (37%)
+  - dsh-typert-generator (27%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (38%)
+  - dsh-typert-generator (28%)
+  - tsdown:css-guard (21%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (34%)
+  - tsdown:report (33%)
+  - tsdown:deps (27%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (40%)
+  - dsh-typert-generator (33%)
+  - tsdown:css-guard (23%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (37%)
+  - tsdown:report (36%)
+  - tsdown:deps (21%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (43%)
+  - dsh-typert-generator (31%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (44%)
+  - tsdown:report (40%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (41%)
+  - tsdown:report (40%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (59%)
+  - tsdown:deps (20%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (38%)
+  - dsh-typert-generator (28%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (43%)
+  - dsh-typert-generator (32%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (37%)
+  - dsh-typert-generator (27%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (42%)
+  - tsdown:report (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (40%)
+  - dsh-typert-generator (30%)
+  - tsdown:css-guard (22%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (44%)
+  - dsh-typert-generator (25%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (61%)
+  - tsdown:css-guard (21%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (32%)
+  - tsdown:report (31%)
+  - dsh-typert-generator (31%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (41%)
+  - tsdown:report (40%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (41%)
+  - tsdown:report (41%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (40%)
+  - tsdown:report (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (44%)
+  - tsdown:css-guard (22%)
+  - dsh-typert-generator (21%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (43%)
+  - dsh-typert-generator (21%)
+  - tsdown:css-guard (20%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (34%)
+  - tsdown:report (31%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:report (39%)
+  - dsh-typert-generator (30%)
+  - tsdown:deps (30%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (60%)
+  - dsh-typert-generator (32%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (36%)
+  - tsdown:report (26%)
+  - tsdown:deps (22%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (32%)
+  - tsdown:deps (30%)
+  - tsdown:report (26%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (46%)
+  - dsh-typert-generator (45%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (45%)
+  - dsh-typert-generator (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (62%)
+  - tsdown:deps (24%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (63%)
+  - tsdown:deps (20%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (43%)
+  - tsdown:deps (32%)
+  - tsdown:css-guard (23%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (59%)
+  - tsdown:deps (23%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `dsh-typert-generator`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (53%)
+  - tsdown:deps (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `dsh-typert-generator`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (50%)
+  - tsdown:css-guard (26%)
+  - tsdown:deps (22%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (70%)
+  - dsh-typert-generator (28%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (51%)
+  - dsh-typert-generator (46%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (61%)
+  - dsh-typert-generator (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (68%)
+  - dsh-typert-generator (30%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (36%)
+  - tsdown:report (33%)
+  - tsdown:deps (30%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (75%)
+  - dsh-typert-generator (24%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (53%)
+  - dsh-typert-generator (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (62%)
+  - dsh-typert-generator (28%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (50%)
+  - tsdown:shebang (30%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (45%)
+  - dsh-typert-generator (43%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (50%)
+  - dsh-typert-generator (40%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (53%)
+  - dsh-typert-generator (36%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (52%)
+  - dsh-typert-generator (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (53%)
+  - dsh-typert-generator (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (48%)
+  - dsh-typert-generator (41%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (73%)
+  - dsh-typert-generator (25%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (61%)
+  - dsh-typert-generator (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (55%)
+  - dsh-typert-generator (43%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (77%)
+  - dsh-typert-generator (21%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (55%)
+  - dsh-typert-generator (42%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (62%)
+  - dsh-typert-generator (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (57%)
+  - tsdown:deps (41%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (73%)
+  - tsdown:deps (24%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (66%)
+  - tsdown:deps (32%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (77%)
+  - tsdown:deps (20%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (75%)
+  - tsdown:deps (22%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `dsh-typert-generator`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (54%)
+  - tsdown:deps (30%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (53%)
+  - tsdown:deps (31%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (49%)
+  - tsdown:deps (32%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `dsh-typert-generator`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (40%)
+  - dsh-typert-generator (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (60%)
+  - tsdown:deps (23%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (45%)
+  - dsh-typert-generator (37%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (71%)
+  - tsdown:deps (27%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (60%)
+  - dsh-typert-generator (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (61%)
+  - dsh-typert-generator (26%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (69%)
+  - dsh-typert-generator (25%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (58%)
+  - dsh-typert-generator (36%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (52%)
+  - dsh-typert-generator (32%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (54%)
+  - dsh-typert-generator (28%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (48%)
+  - tsdown:deps (47%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (61%)
+  - tsdown:deps (31%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (70%)
+  - dsh-typert-generator (28%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (54%)
+  - dsh-typert-generator (30%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (51%)
+  - dsh-typert-generator (30%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (69%)
+  - dsh-typert-generator (31%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `tsdown:deps`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `tsdown:deps`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (65%)
+  - dsh-typert-generator (28%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `tsdown:deps`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (56%)
+  - dsh-typert-generator (43%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (53%)
+  - dsh-typert-generator (39%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `tsdown:deps`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (75%)
+  - dsh-typert-generator (23%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (72%)
+  - dsh-typert-generator (23%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `tsdown:deps`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (67%)
+  - dsh-typert-generator (25%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (57%)
+  - tsdown:deps (38%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (56%)
+  - tsdown:deps (30%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `tsdown:deps`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `tsdown:deps`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (68%)
+  - dsh-typert-generator (26%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (71%)
+  - dsh-typert-generator (26%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (57%)
+  - dsh-typert-generator (35%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `dsh-typert-generator`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (60%)
+  - dsh-typert-generator (34%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - tsdown:deps (77%)
+  - dsh-typert-generator (20%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - dsh-typert-generator (52%)
+  - tsdown:deps (46%)
+See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `tsdown:deps`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugin `tsdown:deps`. See https://rolldown.rs/options/checks#plugintimings for more details.
+
+npm notice run @deepseek-ai/dsh-root@0.1.0-rc.5 typecheck:contracts-ready
+npm notice run tsc -b tsconfig.client.json
+
+
+$ CI=1 pnpm exec vitest run packages/client packages/host --testTimeout=30000
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+The plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the resolve.tsconfigPaths option. You can remove the plugin and set resolve.tsconfigPaths: true in your Vite config instead.
+Error: renderSlot('root') before any 'root' registration (boot order)
+    at RootOutlet (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/scoped-slots.tsx:867:11)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:114:17)
+Error: renderSlot('root') before any 'root' registration (boot order)
+    at RootOutlet (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/scoped-slots.tsx:867:11)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:114:17)
+Error: entry boom
+    at component (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/tests/scoped-slots.client.spec.tsx:333:48)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:114:17)
+Error: entry boom
+    at component (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/tests/scoped-slots.client.spec.tsx:333:48)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:114:17)
+Error: entry A boom
+    at component (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/tests/scoped-slots.client.spec.tsx:392:32)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:114:17)
+Error: entry A boom
+    at component (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/tests/scoped-slots.client.spec.tsx:392:32)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:114:17)
+Error: inject boom
+    at inject (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/tests/scoped-slots.client.spec.tsx:932:29)
+    at runInject (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/scoped-slots.tsx:110:27)
+    at cachedRootInject (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/scoped-slots.tsx:179:13)
+    at RootEntry (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/scoped-slots.tsx:614:20)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+Error: inject boom
+    at inject (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/tests/scoped-slots.client.spec.tsx:932:29)
+    at runInject (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/scoped-slots.tsx:110:27)
+    at cachedRootInject (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/scoped-slots.tsx:179:13)
+    at RootEntry (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/scoped-slots.tsx:614:20)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+Error: slot machinery rendered outside the installed renderer tree
+    at useHost (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/session-provider.tsx:27:20)
+    at SessionProvider (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/session-provider.tsx:151:16)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+Error: slot machinery rendered outside the installed renderer tree
+    at useHost (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/session-provider.tsx:27:20)
+    at SessionProvider (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/packages/client/web-react/src/session-provider.tsx:151:16)
+    at renderWithHooks (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30)
+    at innerInvokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/home/yeshugen/workplace/yeisme-agent/client/deepseek-harness/node_modules/.pnpm/jsdom@29.1.1/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+

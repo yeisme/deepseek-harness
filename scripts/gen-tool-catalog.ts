@@ -28,6 +28,7 @@ import { AttachmentStore } from '@deepseek-ai/dsh-attachment'
 import type { ImageAttachmentLimits, ImageAttachmentRef, SaveImageAttachment, StoredImageAttachment } from '@deepseek-ai/dsh-attachment'
 import UserQuestionService from '@deepseek-ai/dsh-user-questions'
 import PlanModeController from '@deepseek-ai/dsh-plan-mode'
+import PlanSpecService from '@deepseek-ai/dsh-plan-spec'
 import WebRuntime from '@deepseek-ai/dsh-web'
 import * as WebSearchExa from '@deepseek-ai/dsh-web-search-exa'
 import * as WebFetchLocal from '@deepseek-ai/dsh-web-fetch-http'
@@ -220,6 +221,18 @@ const TOOL_PACKAGES: ToolPackage[] = [
     },
     note:
       'exit_plan_mode stays in the model-facing schema while planning is inactive so transitions add no tool-catalog churn on top of the plan-policy change. Its execute path rejects calls outside plan mode; in plan mode it presents the plan over the user-questions seam (approve / keep planning with feedback), and approval logs plan mode inactive at the step boundary.',
+  },
+  {
+    pkg: '@deepseek-ai/dsh-plan-spec',
+    dir: 'plan-spec',
+    source: 'packages/plan/plan-spec/src/index.ts',
+    requires: ['ctx.tools', 'ctx.session', 'ctx.planMode (execution time, approved/executing check)'],
+    writes: ['spec/document'],
+    async mount(ctx) {
+      await ctx.plugin(PlanSpecService)
+    },
+    note:
+      'spec_write persists a spec document under an approved/executing plan; spec_read returns the latest spec or a plan-grouped list.',
   },
   {
     pkg: '@deepseek-ai/dsh-tool-bash',

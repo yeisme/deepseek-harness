@@ -173,7 +173,7 @@ export function PlanFormPanel({ pending, form, t }: { pending: PendingQuestion; 
                       disabled={busy !== null}
                       rows={question.detail === undefined ? 3 : 2}
                       placeholder={t('custom.placeholder')}
-                      onChange={event => { draftCustom(index, question, event) }}
+                      onChange={(event) => { draftCustom(index, question, event) }}
                       onKeyDown={continueFromCustom}
                     />
                   )}

@@ -51,6 +51,9 @@ importers:
       '@yarnpkg/cli-dist':
         specifier: 4.17.1
         version: 4.17.1
+      '@yeisme/dsh-agent-composition-preview':
+        specifier: file:../../agent/harness-plugins/packages/preset/agent-composition-preview
+        version: file:../../agent/harness-plugins/packages/preset/agent-composition-preview(@deepseek-ai/cordis@vendor+cordis)(@deepseek-ai/dsh-agent-presets@packages+preset+agent-presets)(@deepseek-ai/dsh-invariants@packages+runtime-diagnostics+invariants)(@deepseek-ai/dsh-scope@packages+core+scope)(@deepseek-ai/dsh-session-projection@packages+session+session-projection)(@deepseek-ai/dsh-shell@packages+shell+shell)(@deepseek-ai/dsh-system-prompt@packages+core+system-prompt)(@deepseek-ai/dsh-tools@packages+core+tools)(@deepseek-ai/dsh-user-approval@packages+interaction+user-approval)
       eslint-plugin-sonarjs:
         specifier: ^4.1.0
         version: 4.1.0(eslint@10.5.0(jiti@2.7.0))
@@ -234,6 +237,9 @@ importers:
       '@deepseek-ai/dsh-terminal-bash':
         specifier: workspace:^
         version: link:../../packages/terminal/terminal-bash
+      '@deepseek-ai/dsh-tui-runtime':
+        specifier: workspace:^
+        version: link:../../packages/tui/runtime
       '@deepseek-ai/dsh-time-context':
         specifier: workspace:^
         version: link:../../packages/context/time-context
@@ -300,6 +306,9 @@ importers:
       '@deepseek-ai/dsh-workflow-worker-thread':
         specifier: workspace:^
         version: link:../../packages/workflow/workflow-worker-thread
+      '@yeisme/dsh-agent-composition-preview':
+        specifier: file:../../../../agent/harness-plugins/packages/preset/agent-composition-preview
+        version: file:../../agent/harness-plugins/packages/preset/agent-composition-preview(@deepseek-ai/cordis@vendor+cordis)(@deepseek-ai/dsh-agent-presets@packages+preset+agent-presets)(@deepseek-ai/dsh-invariants@packages+runtime-diagnostics+invariants)(@deepseek-ai/dsh-scope@packages+core+scope)(@deepseek-ai/dsh-session-projection@packages+session+session-projection)(@deepseek-ai/dsh-shell@packages+shell+shell)(@deepseek-ai/dsh-system-prompt@packages+core+system-prompt)(@deepseek-ai/dsh-tools@packages+core+tools)(@deepseek-ai/dsh-user-approval@packages+interaction+user-approval)
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -885,6 +894,9 @@ importers:
       '@deepseek-ai/dsh-typert-registry':
         specifier: workspace:^
         version: link:../../typert/registry
+      '@yeisme/dsh-host-ordo-agent-ops':
+        specifier: file:../../../../../agent/harness-plugins/packages/host/ordo-agent-ops
+        version: file:../../agent/harness-plugins/packages/host/ordo-agent-ops(@deepseek-ai/cordis@vendor+cordis)(@deepseek-ai/dsh-brand@packages+util+brand)(@deepseek-ai/dsh-invariants@packages+runtime-diagnostics+invariants)(@deepseek-ai/dsh-typert-protocol@packages+typert+protocol)
 
   packages/attachment/attachment:
     devDependencies:
@@ -1457,6 +1469,9 @@ importers:
       '@deepseek-ai/dsh-attachment':
         specifier: workspace:^
         version: link:../../attachment/attachment
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:^
+        version: link:../../util/brand
       '@deepseek-ai/dsh-commands':
         specifier: workspace:^
         version: link:../../interaction/commands
@@ -6101,6 +6116,9 @@ importers:
       '@deepseek-ai/dsh-invariants':
         specifier: workspace:^
         version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-scope':
+        specifier: workspace:^
+        version: link:../../core/scope
       '@deepseek-ai/dsh-session':
         specifier: workspace:^
         version: link:../../core/session
@@ -7820,6 +7838,15 @@ importers:
       '@deepseek-ai/dsh-user-questions':
         specifier: workspace:^
         version: link:../../interaction/user-questions
+
+  packages/tui/runtime:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
 
   packages/typert/generator:
     dependencies:
@@ -11564,6 +11591,27 @@ packages:
     resolution: {integrity: sha512-2tiSQuJNl/L3QwTdrq6lKWDpkcnp9MGvCT/rIldHcbu3SWfnLdmehvt3eulX1hT7FFt1Gjfq3CesF+kvhFip6g==}
     engines: {node: '>=18.12.0'}
     hasBin: true
+
+  '@yeisme/dsh-agent-composition-preview@file:../../agent/harness-plugins/packages/preset/agent-composition-preview':
+    resolution: {directory: ../../agent/harness-plugins/packages/preset/agent-composition-preview, type: directory}
+    peerDependencies:
+      '@deepseek-ai/cordis': ^4.0.1
+      '@deepseek-ai/dsh-agent-presets': ^0.1.0-rc.6
+      '@deepseek-ai/dsh-invariants': ^0.1.0-rc.6
+      '@deepseek-ai/dsh-scope': ^0.1.0-rc.6
+      '@deepseek-ai/dsh-session-projection': ^0.1.0-rc.6
+      '@deepseek-ai/dsh-shell': ^0.1.0-rc.6
+      '@deepseek-ai/dsh-system-prompt': ^0.1.0-rc.6
+      '@deepseek-ai/dsh-tools': ^0.1.0-rc.6
+      '@deepseek-ai/dsh-user-approval': ^0.1.0-rc.6
+
+  '@yeisme/dsh-host-ordo-agent-ops@file:../../agent/harness-plugins/packages/host/ordo-agent-ops':
+    resolution: {directory: ../../agent/harness-plugins/packages/host/ordo-agent-ops, type: directory}
+    peerDependencies:
+      '@deepseek-ai/cordis': ^4.0.1
+      '@deepseek-ai/dsh-brand': ^0.1.0-rc.6
+      '@deepseek-ai/dsh-invariants': ^0.1.0-rc.6
+      '@deepseek-ai/dsh-typert-protocol': ^0.1.0-rc.6
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -16703,6 +16751,27 @@ snapshots:
       - typescript
 
   '@yarnpkg/cli-dist@4.17.1': {}
+
+  '@yeisme/dsh-agent-composition-preview@file:../../agent/harness-plugins/packages/preset/agent-composition-preview(@deepseek-ai/cordis@vendor+cordis)(@deepseek-ai/dsh-agent-presets@packages+preset+agent-presets)(@deepseek-ai/dsh-invariants@packages+runtime-diagnostics+invariants)(@deepseek-ai/dsh-scope@packages+core+scope)(@deepseek-ai/dsh-session-projection@packages+session+session-projection)(@deepseek-ai/dsh-shell@packages+shell+shell)(@deepseek-ai/dsh-system-prompt@packages+core+system-prompt)(@deepseek-ai/dsh-tools@packages+core+tools)(@deepseek-ai/dsh-user-approval@packages+interaction+user-approval)':
+    dependencies:
+      '@deepseek-ai/cordis': link:vendor/cordis
+      '@deepseek-ai/dsh-agent-presets': link:packages/preset/agent-presets
+      '@deepseek-ai/dsh-invariants': link:packages/runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-scope': link:packages/core/scope
+      '@deepseek-ai/dsh-session-projection': link:packages/session/session-projection
+      '@deepseek-ai/dsh-shell': link:packages/shell/shell
+      '@deepseek-ai/dsh-system-prompt': link:packages/core/system-prompt
+      '@deepseek-ai/dsh-tools': link:packages/core/tools
+      '@deepseek-ai/dsh-user-approval': link:packages/interaction/user-approval
+      zod: 4.4.3
+
+  '@yeisme/dsh-host-ordo-agent-ops@file:../../agent/harness-plugins/packages/host/ordo-agent-ops(@deepseek-ai/cordis@vendor+cordis)(@deepseek-ai/dsh-brand@packages+util+brand)(@deepseek-ai/dsh-invariants@packages+runtime-diagnostics+invariants)(@deepseek-ai/dsh-typert-protocol@packages+typert+protocol)':
+    dependencies:
+      '@deepseek-ai/cordis': link:vendor/cordis
+      '@deepseek-ai/dsh-brand': link:packages/util/brand
+      '@deepseek-ai/dsh-invariants': link:packages/runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-typert-protocol': link:packages/typert/protocol
+      zod: 4.4.3
 
   accepts@2.0.0:
     dependencies:

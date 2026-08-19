@@ -2,6 +2,14 @@
 
 DeepSeek Harness is a plugin-based agent harness on vendored Cordis: **everything is a plugin**. Read [docs/architecture.md](docs/architecture.md) before changing `packages/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
+## Fork maintenance policy
+
+This repository is a fork of `deepseek-ai/deepseek-harness`; upstream architecture, conventions, and public behavior are the default.
+
+- Do not create or retain an `openspec/` directory, OpenSpec changes, or OpenSpec task artifacts.
+- Keep fork-only changes minimal, isolated, and documented through the repository's existing Agent Notes. Prefer official extension points, configuration, and upstreamable fixes over broad rewrites.
+- Before changing upstream-owned behavior, compare it with `upstream/master`; retain divergence only for a Yeisme-specific integration or a clearly scoped local fix.
+
 ## Pre-release stance: foundation over blast radius
 
 **Remove this section at the first tagged release.** With no external consumers, prefer the correct foundation over compatibility shims: rename or repackage freely and update every reference together. Backends reject old on-disk formats. SQLite uses monotonic `SCHEMA_VERSION`; `dsh-session` keeps `SESSION_FORMAT_VERSION` at `0` with no compatibility promise.

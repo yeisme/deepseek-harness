@@ -66,7 +66,7 @@ function normalizePlugin(definition: TuiPluginDefinition): TuiPluginSnapshot {
 
 function normalizeCommands(pluginId: string, commands: readonly TuiCommandContribution[]): readonly TuiCommandContribution[] {
   const seen = new Set<string>()
-  return commands.map(command => {
+  return commands.map((command) => {
     if (!command.id.startsWith(`${pluginId}.`)) {
       throw new TuiPluginError(`TUI command must be namespaced by ${pluginId}: ${command.id}`)
     }
@@ -83,7 +83,7 @@ function normalizeCommands(pluginId: string, commands: readonly TuiCommandContri
 
 function normalizePanels(pluginId: string, panels: readonly TuiPanelContribution[]): readonly TuiPanelContribution[] {
   const seen = new Set<string>()
-  return panels.map(panel => {
+  return panels.map((panel) => {
     if (!panel.id.startsWith(`${pluginId}.`)) {
       throw new TuiPluginError(`TUI panel must be namespaced by ${pluginId}: ${panel.id}`)
     }

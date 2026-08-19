@@ -457,23 +457,23 @@ export class PlanModeController extends Service {
         init: () => ({ latest: undefined, revisions: [] }),
         apply: (state, event) => event.type === 'plan/document'
           ? {
-              latest: {
-                planId: event.data.planId,
-                title: event.data.title,
-                markdown: event.data.markdown,
-                status: event.data.status,
-                round: event.data.round,
-                ...event.data.feedback === undefined ? {} : { feedback: event.data.feedback },
-              },
-              revisions: [...state.revisions, {
-                planId: event.data.planId,
-                title: event.data.title,
-                markdown: event.data.markdown,
-                status: event.data.status,
-                round: event.data.round,
-                ...event.data.feedback === undefined ? {} : { feedback: event.data.feedback },
-              }],
-            }
+            latest: {
+              planId: event.data.planId,
+              title: event.data.title,
+              markdown: event.data.markdown,
+              status: event.data.status,
+              round: event.data.round,
+              ...event.data.feedback === undefined ? {} : { feedback: event.data.feedback },
+            },
+            revisions: [...state.revisions, {
+              planId: event.data.planId,
+              title: event.data.title,
+              markdown: event.data.markdown,
+              status: event.data.status,
+              round: event.data.round,
+              ...event.data.feedback === undefined ? {} : { feedback: event.data.feedback },
+            }],
+          }
           : state,
         view: state => ({ latest: state.latest, revisions: state.revisions }),
         stateVersion: 2,
@@ -784,7 +784,7 @@ export class PlanModeController extends Service {
           throw cause
         }
       },
-      presentCall: args => {
+      presentCall: (args) => {
         const form = args as { questions: AskUserQuestionItem[]; header?: string }
         return {
           card: 'generic',

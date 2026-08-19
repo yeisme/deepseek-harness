@@ -1,0 +1,23 @@
+{
+  "schema_version": "yeisme.integration_test_evidence.v1",
+  "project": "client/deepseek-harness",
+  "run_id": "20260816T062748Z-dsh-composition-e2e",
+  "layer": "e2e",
+  "command": "pnpm exec vitest run --config vitest.e2e.config.ts apps/cli/tests/composition.e2e.ts",
+  "status": "passed",
+  "exit_code": 0,
+  "started_at": "2026-08-16T06:27:48.000Z",
+  "finished_at": "2026-08-16T06:28:32.000Z",
+  "duration_ms": 43950,
+  "evidence": {
+    "stdout": "temp/integration-test-runs/20260816T062748Z-dsh-composition-e2e/stdout.log",
+    "stderr": "temp/integration-test-runs/20260816T062748Z-dsh-composition-e2e/stderr.log",
+    "command": "temp/integration-test-runs/20260816T062748Z-dsh-composition-e2e/command.txt",
+    "env": "temp/integration-test-runs/20260816T062748Z-dsh-composition-e2e/env.json",
+    "artifacts": "temp/integration-test-runs/20260816T062748Z-dsh-composition-e2e/artifacts/"
+  },
+  "redaction": {
+    "enabled": true,
+    "policy": "paths, credentials, authorization headers, prompts, provider payloads, and private tool arguments redacted"
+  }
+}

@@ -1,0 +1,3 @@
+$ CI=1 pnpm exec vitest run packages/client/connection/tests/access-ticket*.spec.ts
+$ CI=1 pnpm run typecheck
+$ CI=1 pnpm exec vitest run packages/client packages/host --testTimeout=30000

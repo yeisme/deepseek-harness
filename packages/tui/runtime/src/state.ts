@@ -181,7 +181,7 @@ function receipt(
   error?: string,
 ): TuiUpdateResult {
   let found = false
-  const pending = state.pending.map(item => {
+  const pending = state.pending.map((item) => {
     if (item.requestId !== requestId) return item
     found = true
     return {
