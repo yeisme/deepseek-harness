@@ -151,6 +151,22 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
       owner: AssistantActionOwnerProps
     }
     /**
+     * Action strip attached to one admitted user message, rendered inside
+     * that message's IconActions row. Mirrors
+     * {@link 'conversation.chat.assistant-actions'}: the chat entry owns the
+     * render site and passes the addressed message identity; contributors add
+     * per-message actions (edit-and-resend, retry-from-here) without
+     * importing the conversation implementation. Plain user nodes carry no
+     * durable `messageId`, so the engine-owned `seq` is the addressing
+     * currency and `messageId` appears only on admitted steering nodes.
+     * Entries render by ascending `order`.
+     */
+    'conversation.chat.user-actions': {
+      kind: 'list'
+      scope: 'session'
+      owner: UserActionOwnerProps
+    }
+    /**
      * The body of the details panel for the tool call the user selected —
      * one occupant, so taking it means rendering every tool's output, not just
      * the ones you know. The owner passes a frozen `block` whose two lifecycle
@@ -398,6 +414,18 @@ export interface TurnTailOwnerProps {
 export interface AssistantActionOwnerProps {
   /** Stable identity carried from the `assistant/message` event. */
   messageId: MessageId
+}
+
+/**
+ * Owner currency of the user-message action strip. Plain user nodes address
+ * by engine-owned `seq` only; admitted steering nodes additionally carry the
+ * durable `user/message` id.
+ */
+export interface UserActionOwnerProps {
+  /** Stable identity carried from the `user/message` event; absent on plain user nodes. */
+  messageId?: MessageId | undefined
+  /** Engine-owned node seq; the durable fork-addressing currency for user nodes. */
+  seq: number
 }
 
 /** Hook constrained to business data published on the current Chat Node's Turn. */

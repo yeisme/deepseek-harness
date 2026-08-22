@@ -13,6 +13,7 @@ import { zh as commonZh } from '@deepseek-ai/dsh-client-locale/src/locales/zh.ts
 import type {
   ChatConversationViewNode, ConversationNode,
 } from '@deepseek-ai/dsh-client-runtime/client'
+import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ChatNodeViewProps } from '../src/client/contract/slots.ts'
 import {
   formatMessageClock, msUntilNextLocalMidnight, startOfLocalDay,
@@ -43,6 +44,7 @@ afterEach(() => {
 // Mirrors the real lookup chain (conversation namespace, then common).
 const t: ChatNodeViewProps['t'] = makeTranslate(zh, commonZh)
 const renderMessageImages: AssistantMarkdownProps['renderMessageImages'] = () => null
+const emptyUserActions: PropsRenderSlots<'conversation.chat.user-actions'>['renderSlot'] = () => null
 const RETRY_ID = 'retry-fixture' as Extract<ConversationNode, { kind: 'model-retry' }>['retryId']
 
 interface MessageItemProps {
@@ -72,7 +74,12 @@ function MessageItem({ node, t: translate, referenceLabels }: MessageItemProps) 
   switch (node.kind) {
     case 'user':
     case 'steering':
-      return <UserMessageNodeView {...props as ChatNodeViewProps<'user' | 'steering'>} />
+      return <UserMessageNodeView
+        node={viewNode as ChatNodeViewProps<'user'>['node'] | ChatNodeViewProps<'steering'>['node']}
+        renderMessageImages={renderMessageImages}
+        t={translate}
+        renderSlot={emptyUserActions}
+      />
     case 'context':
       return <ContextMessageNodeView {...props as ChatNodeViewProps<'context'>} />
     case 'compaction':

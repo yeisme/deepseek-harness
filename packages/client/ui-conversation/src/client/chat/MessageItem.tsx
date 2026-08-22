@@ -9,7 +9,10 @@ import type {
   ModelRetryNode, TurnErrorNode, UserMessageNode,
 } from '@deepseek-ai/dsh-client-runtime/client'
 import { JsonBlock, MessageText, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { ChatNodeOwnerProps, ChatNodeViewProps, ChatViewSlotProps } from '../contract/slots.ts'
+import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
+import type {
+  ChatNodeOwnerProps, ChatNodeViewProps, ChatViewSlotProps, UserActionOwnerProps,
+} from '../contract/slots.ts'
 import { ReferenceIcon } from '../reference/ReferenceIcon.tsx'
 import { CompactionItem } from './CompactionItem.tsx'
 import { ContextInjectionRow } from './ContextInjectionRow.tsx'
@@ -277,11 +280,26 @@ export function PendingSteeringBubble({ content, renderMessageImages, t }: {
   )
 }
 
-/** User and admitted-steering keyed Chat renderer. */
+/**
+ * User and admitted-steering keyed Chat renderer.
+ *
+ * Props are a single object with `node` as a union, not
+ * `ChatNodeViewProps<'user' | 'steering'>` intersected with the child-slot
+ * share: that intersection distributes into a union JSX then checks as an
+ * intersection, so a plain user node fails to type-check.
+ */
 export const UserMessageNodeView = memo(function UserMessageNodeView({
-  node, renderMessageImages, t,
-}: ChatNodeViewProps<'user' | 'steering'>) {
+  node, renderMessageImages, renderSlot, t,
+}: {
+  node: ChatNodeViewProps<'user'>['node'] | ChatNodeViewProps<'steering'>['node']
+  renderMessageImages: ChatNodeOwnerProps['renderMessageImages']
+  t: ChatNodeViewProps['t']
+} & Pick<PropsRenderSlots<'conversation.chat.user-actions'>, 'renderSlot'>) {
   const data = node.data
+  // Plain user nodes address by seq alone; admitted steering carries a durable id.
+  const owner: UserActionOwnerProps = data.kind === 'steering'
+    ? { messageId: data.messageId, seq: data.seq }
+    : { seq: data.seq }
   return (
     <UserStyleBubble
       content={data.content}
@@ -294,6 +312,7 @@ export const UserMessageNodeView = memo(function UserMessageNodeView({
           time={data.time}
           clock="start"
           className={css.actions}
+          extraActions={renderSlot('conversation.chat.user-actions', owner)}
           t={t}
         />
       )}

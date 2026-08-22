@@ -16,6 +16,7 @@ import {
   createSnapshotStore, EMPTY_CONVERSATION_VIEWS, PendingWait,
 } from '@deepseek-ai/dsh-client-runtime/client'
 import { RpcId } from '@deepseek-ai/dsh-client-connection/client'
+import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import type {
   ChatNode, ChatNodeOwnerProps, ChatNodeViewProps, ChatViewSlotProps, SelectionTarget, UseChatNodeTurnData,
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -46,6 +47,7 @@ beforeEach(() => {
 
 const SID = 's1' as SessionId
 type RoutedChatNodeOwner = ChatNodeOwnerProps & { readonly node: ChatNode }
+const emptyUserActions: PropsRenderSlots<'conversation.chat.user-actions'>['renderSlot'] = () => null
 
 function snapshotBase(): ConversationSnapshot {
   return {
@@ -198,8 +200,17 @@ function makeHarness(init?: Partial<ConversationSnapshot>) {
     )
     switch (nodeOwner.node.kind) {
       case 'user':
-      case 'steering':
-        return <UserMessageNodeView {...nodeProps<'user' | 'steering'>()} />
+      case 'steering': {
+        const userProps = nodeProps<'user' | 'steering'>()
+        return (
+          <UserMessageNodeView
+            node={userProps.node}
+            renderMessageImages={userProps.renderMessageImages}
+            t={userProps.t}
+            renderSlot={emptyUserActions}
+          />
+        )
+      }
       case 'context':
         return <ContextMessageNodeView {...nodeProps<'context'>()} />
       case 'assistant-step':
