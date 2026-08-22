@@ -287,3 +287,57 @@ describe('sessions.fork', () => {
     await ctx.fiber.dispose()
   })
 })
+
+describe('sessions.forkBeforeMessage', () => {
+  it('creates a seedLength-0 child for the first-round message', async () => {
+    const ctx = await composed()
+    const source = liveAgent(ctx, 'session-first', 1)
+    const firstUser = source.events.find(event => event.type === 'user/message')
+    expect(firstUser).toBeDefined()
+    const response = await api(ctx).sessions.forkBeforeMessage(request({
+      sessionId: source.id,
+      atMessageSeq: firstUser!.seq,
+    }))
+    expect(response.result.ok).toBe(true)
+    if (!response.result.ok) return
+    const child = ctx.sessions.get(response.result.value.sessionId)
+    expect(child?.header.parentSession).toBe(source.id)
+    expect(child?.header.seedLength).toBe(0)
+    expect(child?.header.cwd).toBe('/proj')
+    expect(child?.events.filter(event => event.type !== 'session/end-seed')).toEqual([])
+    await ctx.fiber.dispose()
+  })
+
+  it('cuts at the completed turn before a later message', async () => {
+    const ctx = await composed()
+    const source = liveAgent(ctx, 'session-later', 2)
+    const secondUser = source.events.filter(event => event.type === 'user/message').at(-1)
+    expect(secondUser).toBeDefined()
+    const response = await api(ctx).sessions.forkBeforeMessage(request({
+      sessionId: source.id,
+      atMessageSeq: secondUser!.seq,
+    }))
+    expect(response.result.ok).toBe(true)
+    if (!response.result.ok) return
+    const child = ctx.sessions.get(response.result.value.sessionId)
+    expect(child?.events.map(event => event.type)).toEqual([
+      'turn/start', 'user/message', 'turn/end', 'session/end-seed',
+    ])
+    expect(child?.header.parentSession).toBe(source.id)
+    await ctx.fiber.dispose()
+  })
+
+  it('rejects an unknown message seq', async () => {
+    const ctx = await composed()
+    const source = liveAgent(ctx, 'session-missing', 1)
+    const response = await api(ctx).sessions.forkBeforeMessage(request({
+      sessionId: source.id,
+      atMessageSeq: 999,
+    }))
+    expect(response.result).toMatchObject({
+      ok: false,
+      error: { code: 'fork-unavailable', details: { sessionId: source.id, atMessageSeq: 999 } },
+    })
+    await ctx.fiber.dispose()
+  })
+})

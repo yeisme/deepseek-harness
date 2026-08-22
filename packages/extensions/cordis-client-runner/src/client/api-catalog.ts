@@ -197,6 +197,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['when the fork fails, or when a requested child-title rename fails after creation.'],
       },
       {
+        signature: 'forkBeforeMessage(opts: { sessionId: SessionId; atMessageSeq: number }): Promise<SessionId>',
+        description: 'Fork a child that excludes the addressed message. First-round messages produce a seedLength-0 child that still inherits cwd, parentSession, and workspace attachment.',
+        parameters: [{ name: 'opts', description: 'source session and the event seq to rewrite from.' }],
+        returns: 'the child session id.',
+        throws: ['when the source or message seq is unavailable.'],
+      },
+      {
         signature: 'scope(id: SessionId): AgentContext | undefined',
         description: 'Resolve an Agent-scoped context view (use-and-discard).',
         parameters: [{ name: 'id', description: 'session id.' }],

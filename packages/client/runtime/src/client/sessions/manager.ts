@@ -603,6 +603,35 @@ export class SessionManager {
   }
 
   /**
+   * Contract session.forkBeforeMessage; same list-addressability as fork.
+   * First-round children are blank (`seedLength: 0`).
+   */
+  async forkBeforeMessage(
+    opts: { sessionId: SessionId; atMessageSeq: number },
+  ): Promise<RpcResult<{ sessionId: SessionId }>> {
+    try {
+      const source = this.summaries.find(s => s.sessionId === opts.sessionId)
+      const { result } = await this.api.sessions.forkBeforeMessage({
+        sessionId: opts.sessionId,
+        atMessageSeq: opts.atMessageSeq,
+      })
+      const childId = result.ok
+        ? result.value.sessionId
+        : workspaceAttachSessionId(result.error)
+      if (childId !== undefined) {
+        this.recordMutation({ kind: 'upsert', summary: {
+          sessionId: childId, updatedAt: Date.now(), running: false, blank: true,
+          parentSessionId: opts.sessionId,
+          ...(source?.cwd !== undefined ? { cwd: source.cwd } : {}),
+        } })
+      }
+      return result
+    } catch (error) {
+      return transportError(error)
+    }
+  }
+
+  /**
    * Insert-or-enrich a locally synthesized summary: a new id prepends; an
    * existing entry only gains fields it lacks (the session-added frame and the
    * create() echo race — whichever lands second must fill the placeholder's

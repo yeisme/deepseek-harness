@@ -96,6 +96,14 @@ export interface ISessions {
    */
   fork(opts: { sessionId: SessionId; atSeq?: number; increaseTitle?: boolean }): Promise<SessionId>
   /**
+   * Fork a child that excludes the addressed message. First-round messages
+   * produce a `seedLength: 0` child that still inherits cwd, parentSession,
+   * and workspace attachment.
+   * @param opts - source session and the event seq to rewrite from.
+   * @returns the child session id.
+   */
+  forkBeforeMessage(opts: { sessionId: SessionId; atMessageSeq: number }): Promise<SessionId>
+  /**
    * Register a per-session standard-props provider (hooks become `use<Name>`
    * selector hooks on the render side; props spread verbatim).
    * @param descriptor - static member roster plus per-session resolver.

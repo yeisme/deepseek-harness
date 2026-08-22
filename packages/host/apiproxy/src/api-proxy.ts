@@ -2358,6 +2358,85 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         return ok(request, { sessionId: childId })
       },
 
+      async forkBeforeMessage(request) {
+        const { sessionId, atMessageSeq } = request.payload
+        let source: SessionReadState
+        try {
+          source = await readSessionState(sessionId)
+        } catch (error: unknown) {
+          if (error instanceof SessionNotFound) {
+            return err(request, { code: 'session-not-found', message: error.message, details: { sessionId } })
+          }
+          return err(request, {
+            code: 'internal',
+            message: `forkBeforeMessage source unavailable for session "${sessionId}": ${String(error)}`,
+            details: {},
+          })
+        }
+        const events = source.events
+        const target = events.find(event => event.seq === atMessageSeq)
+        if (target === undefined) {
+          return err(request, {
+            code: 'fork-unavailable',
+            message: `session "${sessionId}" has no event ${String(atMessageSeq)} to fork before`,
+            details: { sessionId, atMessageSeq },
+          })
+        }
+        const priorEnd = events.findLast(event => event.type === 'turn/end' && event.seq < atMessageSeq)
+        let cut = 0
+        if (priorEnd !== undefined) {
+          cut = priorEnd.seq + 1
+          while (cut < events.length && events[cut]?.type !== 'turn/start') cut++
+          if (cut > atMessageSeq) cut = atMessageSeq
+        }
+        let workspace: Workspace | undefined
+        try {
+          workspace = await forkWorkspace(source)
+        } catch (error: unknown) {
+          return err(request, {
+            code: 'internal',
+            message: `failed to resolve fork workspace for session "${sessionId}": ${String(error)}`,
+            details: {},
+          })
+        }
+        const childId = `session-${randomUUID()}` as SessionId
+        const forkComposition = await composeAgent(resolveSessionPreset(source))
+        try {
+          await ctx.agents.create({
+            sessionId: childId,
+            seed: events.slice(0, cut),
+            meta: {
+              ...source.header.cwd === undefined ? {} : { cwd: source.header.cwd },
+              parentSession: source.id,
+              seedLength: cut,
+              ...forkComposition.agentPreset === undefined
+                ? {}
+                : { agentPreset: forkComposition.agentPreset },
+            },
+            agentOptions: agentOptions(),
+            setup: forkComposition.setup,
+          })
+        } catch (error: unknown) {
+          return err(request, {
+            code: 'internal',
+            message: `failed to forkBeforeMessage session "${sessionId}": ${String(error)}`,
+            details: {},
+          })
+        }
+        if (workspace !== undefined) {
+          try {
+            await workspace.attachSession(childId)
+          } catch (error: unknown) {
+            return err(request, {
+              code: 'workspace-attach-failed',
+              message: `session "${childId}" was forked but could not attach to workspace "${workspace.id}": ${String(error)}`,
+              details: { sessionId: childId, workspaceId: workspace.id },
+            })
+          }
+        }
+        return ok(request, { sessionId: childId })
+      },
+
       async prompt(request) {
         const { sessionId, mode, content, clientTimeZone } = request.payload
         const canonicalTimeZone = clientTimeZone === undefined

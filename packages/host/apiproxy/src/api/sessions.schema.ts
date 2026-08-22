@@ -138,6 +138,17 @@ export const sessionForkValueSchema = z.object({
   sessionId: sessionIdSchema,
 }) satisfies z.ZodType<Wire<ResponseValue<'session.fork'>>>
 
+/** session.forkBeforeMessage request: rewrite from before this event seq. */
+export const sessionForkBeforeMessageRequestSchema = z.object({
+  sessionId: sessionIdSchema,
+  atMessageSeq: z.number().int().nonnegative(),
+}) satisfies z.ZodType<Wire<RequestPayload<'session.forkBeforeMessage'>>>
+
+/** session.forkBeforeMessage response value (the child session id). */
+export const sessionForkBeforeMessageValueSchema = z.object({
+  sessionId: sessionIdSchema,
+}) satisfies z.ZodType<Wire<ResponseValue<'session.forkBeforeMessage'>>>
+
 /** session.history request payload (beforeSeq/maxMessages page backwards from the window tail). */
 export const sessionHistoryRequestSchema = z.object({
   sessionId: sessionIdSchema,

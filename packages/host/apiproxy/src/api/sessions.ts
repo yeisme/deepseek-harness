@@ -342,6 +342,17 @@ export interface SessionsApi {
   Promise<RpcResponse<{ sessionId: SessionId }>>
 
   /**
+   * Forks a child that excludes the addressed message. `atMessageSeq` is the
+   * user/assistant event to rewrite from: the seed is the last completed
+   * `turn/end` strictly before that seq, or an empty prefix (`seedLength: 0`)
+   * when the message is the first round. The child still inherits cwd,
+   * parentSession lineage, and workspace attachment. An unknown seq fails
+   * with `fork-unavailable` instead of clipping to an arbitrary earlier turn.
+   */
+  forkBeforeMessage(request: RpcRequest<{ sessionId: SessionId; atMessageSeq: number }>):
+  Promise<RpcResponse<{ sessionId: SessionId }>>
+
+  /**
    * Sends text and temporary image bytes to an ordinary session Agent after durable host admission.
    * Browser callers attach their current IANA zone;
    * the Host validates, canonicalizes, and records it on that exact user message. Omission remains

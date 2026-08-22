@@ -592,6 +592,18 @@ describe('fork', () => {
       .rejects.toThrow('fork child rename failed: title-invalid: rejected')
     expect(b.svc.binding(sid('child'))).toBeDefined()
   })
+
+  it('exposes forkBeforeMessage as an additive sessions method', async () => {
+    const b = bench()
+    await feedList(b, [{ id: 'source', cwd: '/work' }])
+    b.api.onForkBeforeMessage = () => Promise.resolve(ok({ sessionId: sid('child-before') }))
+    await expect(b.svc.forkBeforeMessage({ sessionId: sid('source'), atMessageSeq: 0 }))
+      .resolves.toBe('child-before')
+    expect(b.api.callsOf('session.forkBeforeMessage')).toEqual([
+      { sessionId: 'source', atMessageSeq: 0 },
+    ])
+    expect(b.svc.binding(sid('child-before'))).toBeDefined()
+  })
 })
 
 describe('scope lifecycle rides the list mirror (entity parity: no client-side pre-birth)', () => {

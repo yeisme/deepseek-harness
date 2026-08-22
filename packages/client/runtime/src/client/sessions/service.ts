@@ -532,6 +532,25 @@ export class SessionRuntime implements ISessions {
   }
 
   /**
+   * Fork a child that excludes the addressed message. First-round messages
+   * produce an empty seed; later messages cut at the last completed turn
+   * before `atMessageSeq`.
+   * @throws {SessionForkError} with the source id.
+   */
+  async forkBeforeMessage(opts: {
+    sessionId: SessionId
+    atMessageSeq: number
+  }): Promise<SessionId> {
+    const result = await this.manager.forkBeforeMessage({
+      sessionId: opts.sessionId,
+      atMessageSeq: Math.floor(opts.atMessageSeq),
+    })
+    if (!result.ok) throw new SessionForkError(result.error, opts.sessionId)
+    this.projectList()
+    return result.value.sessionId
+  }
+
+  /**
    * Resolve an Agent-scoped context view (use-and-discard).
    * @param id - session id (the agent identity — 1:1 same axis).
    * @returns scoped ctx, or undefined for a session neither listed nor already scoped.

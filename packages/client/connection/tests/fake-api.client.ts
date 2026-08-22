@@ -48,6 +48,7 @@ export class FakeApiClient implements IApiClient {
   onCreate: (payload: unknown) => Promise<RpcResponse<{ sessionId: SessionId }>> = () => Promise.resolve(ok({ sessionId: 'fk-new' as SessionId }))
   onRename: (payload: unknown) => Promise<RpcResponse<{ title: string; seq: number }>> = () => Promise.resolve(ok({ title: 'fk-renamed', seq: 0 }))
   onFork: (payload: unknown) => Promise<RpcResponse<{ sessionId: SessionId }>> = () => Promise.resolve(ok({ sessionId: 'fk-fork' as SessionId }))
+  onForkBeforeMessage: (payload: unknown) => Promise<RpcResponse<{ sessionId: SessionId }>> = () => Promise.resolve(ok({ sessionId: 'fk-fork-before' as SessionId }))
   onHistory: (payload: { sessionId: SessionId; beforeSeq?: number; maxMessages?: number })
   => Promise<RpcResponse<{ events: never[]; hasMore: boolean; modelSelection: ModelSelection }>> =
     () => Promise.resolve(ok({
@@ -118,6 +119,7 @@ export class FakeApiClient implements IApiClient {
       this.record('session.selectModel', payload, this.onSelectModel(payload)),
     rename: (payload: unknown) => this.record('session.rename', payload, this.onRename(payload)),
     fork: (payload: unknown) => this.record('session.fork', payload, this.onFork(payload)),
+    forkBeforeMessage: (payload: unknown) => this.record('session.forkBeforeMessage', payload, this.onForkBeforeMessage(payload)),
     prompt: (payload: unknown) => this.record('session.prompt', payload, this.onPrompt(payload)),
     attachment: (payload: unknown) => this.record('session.attachment', payload, this.onAttachment(payload)),
     updateQueue: (payload: unknown) => this.record('session.updateQueue', payload, this.onUpdateQueue(payload)),
