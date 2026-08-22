@@ -416,6 +416,8 @@ export interface ChatNodeTurnDataInjected {
 export interface ChatNodeOwnerProps {
   /** Selected Tool call, when the shared details store names one. */
   selectedCallId?: CallId | undefined
+  /** Select one Tool call and ask the canonical Details surface to reveal it. */
+  openDetails?: ((target: SelectionTarget) => void) | undefined
   /** Session workspace root; Tool summaries display paths relative to it. */
   cwd?: string | undefined
   openFile: (path: string) => void

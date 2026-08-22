@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { apply as themeApply, inject as themeInject, ThemeRuntime } from '@deepseek-ai/dsh-client-ui-theme/client'
-import { apply, inject, LayoutController } from '@deepseek-ai/dsh-client-ui-layout/client'
+import { apply, inject, LayoutController, WorkspaceLayoutController } from '@deepseek-ai/dsh-client-ui-layout/client'
 import { apply as nodeApply } from '@deepseek-ai/dsh-client-ui-layout'
 import * as invariant from '@deepseek-ai/dsh-client-ui-layout/invariant'
 
@@ -40,20 +40,23 @@ describe('ui-layout client apply', () => {
     expect(inject).toEqual(['slots', 'theme'])
   })
 
-  it('provides ctx.layout and registers AppFrame into root with the three child declarations', async () => {
+  it('provides layout services and registers AppFrame with the workspace child declarations', async () => {
     const { ctx, slots } = await bench()
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
     expect(ctx.get('layout')).toBeInstanceOf(LayoutController)
+    expect(ctx.get('workspaceLayout')).toBeInstanceOf(WorkspaceLayoutController)
     // The one register() call occupied 'root'…
     expect(slots.entries('root')).toHaveLength(1)
     // …and declared the three children in the ledger.
     expect(slots.spec('sidebar')).toEqual({ kind: 'single', scope: 'root' })
     expect(slots.spec('conversation')).toEqual({ kind: 'single', scope: 'session-maybe' })
     expect(slots.spec('details')).toEqual({ kind: 'single', scope: 'session' })
+    expect(slots.spec('shell.workspace.right')).toEqual({ kind: 'single', scope: 'root' })
+    expect(slots.spec('shell.workspace.bottom')).toEqual({ kind: 'single', scope: 'root' })
   })
 
-  it('injects no business face and attaches the layout actions', async () => {
+  it('injects the workspace geometry face and attaches the layout actions', async () => {
     const { ctx, slots } = await bench()
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
@@ -61,7 +64,7 @@ describe('ui-layout client apply', () => {
       setSidebar: vi.fn(), setDetails: vi.fn(), toggleSidebar: vi.fn(), openDetails: vi.fn(), closeDetails: vi.fn(),
     }
     const injected = (slots.entries('root')[0]!.inject as (actions: never) => object)(actions as never)
-    expect(injected).toEqual({})
+    expect(injected).toEqual({ workspaceLayout: ctx.get('workspaceLayout') })
     const layout = ctx.get('layout') as LayoutController
     layout.toggleSidebar()
     expect(actions.toggleSidebar).toHaveBeenCalledOnce()
@@ -98,6 +101,7 @@ describe('ui-layout client apply', () => {
     await fiber.await()
     await fiber.dispose()
     expect(ctx.get('layout')).toBeUndefined()
+    expect(ctx.get('workspaceLayout')).toBeUndefined()
     expect(slots.entries('root')).toHaveLength(0)
     expect(slots.spec('sidebar')).toBeUndefined()
     // The built-in root declaration survives entry teardown (runtime-owned).

@@ -10,6 +10,7 @@
  */
 import type { BoundActions } from '@deepseek-ai/dsh-client-ui-slots'
 import type { createLayoutStore } from './stores.ts'
+import type { WorkspaceLayoutController } from './workspace-layout.ts'
 
 /** The layout store's bound action set (framework-baked, draft params peeled). */
 export type PanelActions = BoundActions<ReturnType<typeof createLayoutStore>>
@@ -33,6 +34,8 @@ export interface ILayout {
 export class LayoutController implements ILayout {
   #panels: PanelActions | undefined
 
+  constructor(private readonly workspaceLayout?: WorkspaceLayoutController) {}
+
   /**
    * Adopt the root entry's bound store actions. Called from the root
    * registration's inject hook (a sanctioned assembly side effect), so the
@@ -51,6 +54,7 @@ export class LayoutController implements ILayout {
 
   /** Open the details panel (no-op when already open). */
   openDetails(): void {
+    this.workspaceLayout?.noteDetailsOpened()
     this.#require().openDetails()
   }
 

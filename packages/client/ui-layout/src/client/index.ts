@@ -1,7 +1,7 @@
 /**
  * Layout plugin, browser half: one register() call contributes AppFrame into
  * the runtime's built-in 'root' slot and, in the same breath, declares the
- * four child slots (declaration = exclusive render authority), seats the
+ * six child slots (declaration = exclusive render authority), seats the
  * layout store (panel geometry), and wires the panel-action service face.
  * ctx.layout is the cross-plugin panel-action contract; navigation state lives
  * with the runtime sessions service. A second effect seats the theme
@@ -14,6 +14,7 @@ import { AppFrame } from './AppFrame.tsx'
 import { createLayoutStore } from './stores.ts'
 import { LayoutController } from './service.ts'
 import { ThemePresenter } from './theme-presenter.ts'
+import { WorkspaceLayoutController } from './workspace-layout.ts'
 
 // Contract exports only (export-convergence rule: cross-package consumers
 // keep a symbol exported; test-only/package-internal symbols live off /src).
@@ -22,18 +23,31 @@ import { ThemePresenter } from './theme-presenter.ts'
 // against; the frame components and the store factory are package-internal.
 export { LayoutController } from './service.ts'
 export type { ILayout } from './service.ts'
+export { WorkspaceLayoutController } from './workspace-layout.ts'
+export type {
+  IWorkspaceLayout,
+  WorkspaceBottomOwnerProps,
+  WorkspaceLayoutHandle,
+  WorkspaceLayoutPreference,
+  WorkspaceLayoutSnapshot,
+  WorkspaceRegion,
+  WorkspaceRegionMode,
+  WorkspaceRightOwnerProps,
+} from './workspace-layout.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
     /** The outward face only; the concrete service stays inside this plugin. */
     layout: import('./service.ts').ILayout
+    /** Additive single-owner workspace geometry face. */
+    workspaceLayout: import('./workspace-layout.ts').IWorkspaceLayout
   }
 }
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
     // The 'root' entry itself is the runtime's built-in slot (declared
-    // there); these four are the frame's children, declared by the same
+  // there); these six are the frame's children, declared by the same
     // register() call that contributes AppFrame. Session owners never pass
     // sessionId: the framework injects it as a standard prop.
     /**
@@ -70,6 +84,10 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * `session` scope, and `ctx.layout` owns whether the column is open.
      */
     'details': { kind: 'single'; scope: 'session'; owner: DetailsOwnerProps }
+    /** Official full-height workspace to the right of the conversation. */
+    'shell.workspace.right': { kind: 'single'; scope: 'root'; owner: import('./workspace-layout.ts').WorkspaceRightOwnerProps }
+    /** Official utility workspace below the conversation only. */
+    'shell.workspace.bottom': { kind: 'single'; scope: 'root'; owner: import('./workspace-layout.ts').WorkspaceBottomOwnerProps }
     /**
      * Frame-wide floating layer, above every column and outside their scroll
      * containers. Deliberately generic and unowned by any feature: a badge, a
@@ -109,20 +127,24 @@ export const inject = ['slots', 'theme']
 
 /**
  * Client plugin body: provide ctx.layout, then one register() call — AppFrame
- * into 'root' with the four child-slot declarations, the layout store seat,
+ * into 'root' with the six child-slot declarations, the layout store seat,
  * and the inject hook that hands the store's bound actions to the service.
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
-  const layout = new LayoutController()
+  const workspaceLayout = new WorkspaceLayoutController()
+  const layout = new LayoutController(workspaceLayout)
   ctx.effect(() => {
     const disposeService = ctx.reflect.provide('layout', layout)
+    const disposeWorkspaceService = ctx.reflect.provide('workspaceLayout', workspaceLayout)
     const disposeRegistration = ctx.slots.register({
       name: 'root',
       children: {
         'sidebar': { kind: 'single', scope: 'root' },
         'conversation': { kind: 'single', scope: 'session-maybe' },
         'details': { kind: 'single', scope: 'session' },
+        'shell.workspace.right': { kind: 'single', scope: 'root' },
+        'shell.workspace.bottom': { kind: 'single', scope: 'root' },
         'shell.overlay': { kind: 'list', scope: 'root' },
       },
       // Exclusive store: the factory itself — the framework instantiates per
@@ -132,12 +154,13 @@ export function apply(ctx: ClientContext): void {
       // conversation business actions belong to their registrants.
       inject: (actions: PanelActions) => {
         layout.attachPanels(actions)
-        return {}
+        return { workspaceLayout }
       },
     }, AppFrame)
     return () => {
       disposeRegistration()
       // provide()'s disposer settles asynchronously; teardown is synchronous fire-and-forget.
+      void disposeWorkspaceService()
       void disposeService()
     }
   }, 'ui-layout: service + root registration')

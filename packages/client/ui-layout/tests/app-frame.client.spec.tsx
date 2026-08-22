@@ -17,6 +17,7 @@ import { AppFrame } from '@deepseek-ai/dsh-client-ui-layout/src/client/AppFrame.
 import type { AppFrameProps } from '@deepseek-ai/dsh-client-ui-layout/src/client/AppFrame.tsx'
 import { SIDEBAR_COLLAPSED } from '@deepseek-ai/dsh-client-ui-layout/src/client/columns.ts'
 import { createLayoutStore } from '@deepseek-ai/dsh-client-ui-layout/src/client/stores.ts'
+import { WorkspaceLayoutController } from '@deepseek-ai/dsh-client-ui-layout/src/client/workspace-layout.ts'
 import type {
   SessionId, SessionListState, WorkspaceListState,
 } from '@deepseek-ai/dsh-client-runtime/client'
@@ -55,6 +56,7 @@ function hookOf<T>(inst: { subscribe: (fn: () => void) => () => void; getSnapsho
 function mountFrame() {
   window.innerWidth = frameWidth // first-render viewport source before the observer fires
   const instance = createLayoutStore().create()
+  const workspaceLayout = new WorkspaceLayoutController()
   const slotCalls: { key: string; props: unknown }[] = []
   const renderSlot = ((key: string, owner: object) => {
     slotCalls.push({ key, props: owner })
@@ -88,15 +90,16 @@ function mountFrame() {
       useSessions={useSessions}
       useWorkspaces={((sel: (s: WorkspaceListState) => unknown) => sel(workspaceState)) as never}
       SessionProvider={SessionProviderStub}
+      workspaceLayout={workspaceLayout}
     />
   )
   const utils = render(element())
   const frame = utils.container.firstElementChild as HTMLElement
-  return { instance, frame, slotCalls, rerenderFrame: () => { utils.rerender(element()) }, ...utils }
+  return { instance, workspaceLayout, frame, slotCalls, rerenderFrame: () => { utils.rerender(element()) }, ...utils }
 }
 
 function tracks(frame: HTMLElement): number[] {
-  const m = /^(\d+)px minmax\(0, 1fr\) (\d+)px$/.exec(frame.style.gridTemplateColumns)
+  const m = /^(\d+)px minmax\(0, \d+px\) \d+px (\d+)px$/.exec(frame.style.gridTemplateColumns)
   if (m === null) throw new Error(`unexpected template: ${frame.style.gridTemplateColumns}`)
   return [Number(m[1]), Number(m[2])]
 }
@@ -235,7 +238,7 @@ describe('AppFrame', () => {
   })
 
   it('drag base is the rendered (concession-clamped) width, not the preference', () => {
-    frameWidth = 1250 // step-2 squeeze: details renders 330 while preference is 360
+    frameWidth = 1030 // conversation floor (420) squeezes details to 330 while preference is 360
     const { frame, instance } = mountFrame()
     act(() => { instance.actions.openDetails() })
     expect(tracks(frame)).toEqual([280, 330])
@@ -264,7 +267,7 @@ describe('AppFrame', () => {
   it('viewport shrink triggers the concession chain via ResizeObserver', () => {
     const { frame, instance } = mountFrame()
     act(() => { instance.actions.openDetails() })
-    frameWidth = 1250
+    frameWidth = 1030
     act(() => { fireResize?.(); vi.advanceTimersByTime(20) })
     expect(tracks(frame)).toEqual([280, 330])
     frameWidth = 1920
@@ -391,7 +394,7 @@ describe('AppFrame — unmount with an in-flight resize frame', () => {
   it('double resize inside one frame rides the pending rAF (??= guard)', () => {
     const { frame, instance } = mountFrame()
     act(() => { instance.actions.openDetails() })
-    frameWidth = 1250
+    frameWidth = 1030
     act(() => { fireResize?.(); fireResize?.(); vi.advanceTimersByTime(20) })
     expect(tracks(frame)).toEqual([280, 330])
   })

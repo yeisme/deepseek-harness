@@ -171,6 +171,7 @@ function makeHarness(init?: Partial<ConversationSnapshot>) {
     toolName: string
     block: ToolCallBlock
     selectedCallId: string | undefined
+    openDetails: ChatNodeOwnerProps['openDetails']
     openFile: ChatNodeOwnerProps['openFile']
     inspectCall: ChatNodeOwnerProps['inspectCall']
   }> = []
@@ -241,6 +242,7 @@ function makeHarness(init?: Partial<ConversationSnapshot>) {
           toolName,
           block,
           selectedCallId: nodeOwner.selectedCallId,
+          openDetails: nodeOwner.openDetails,
           openFile: nodeOwner.openFile,
           inspectCall: nodeOwner.inspectCall,
         }
@@ -870,6 +872,13 @@ describe('ChatView', () => {
     expect(h.toolOwners.at(-1)?.selectedCallId).toBe('a')
   })
 
+  it('opens the canonical Details surface from a Tool row gesture', () => {
+    const h = makeHarness({ nodes: [toolResult(3, 'a')] })
+    const view = render(<h.ChatView {...h.props} />)
+    fireEvent.click(view.getByTestId('tool-seat-a'))
+    expect(h.openDetails).toHaveBeenCalledWith({ turnSeq: 3, callId: 'a', toolName: 'bash' })
+  })
+
   it('hands running calls to a live Tool group', () => {
     const h = makeHarness({ runningCalls: [runningCall('r1')], running: true })
     const view = render(<h.ChatView {...h.props} />)
@@ -970,6 +979,7 @@ describe('ChatView', () => {
     expect(owner.openFile).not.toBe(h.openFile)
     owner.openFile('src/a.ts')
     expect(h.openFile).toHaveBeenCalledWith('src/a.ts')
+    expect(owner.openDetails).toBe(h.openDetails)
     expect(owner.inspectCall).toBe(h.inspectCall)
   })
 

@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-20-dsh-pane-workspace-layout.md
+2026-08-20-dsh-pane-workspace-layout.md: 91cbbf15cc2e383044b859202ff898769ad36732
+2026-08-20-dsh-pane-workspace-layout.zh.md: 35bbbeeac2fb6467634bfaf70e5a4995f0b55808

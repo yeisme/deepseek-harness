@@ -1,201 +1,275 @@
-/**
- * Three-column shell frame, registered into the built-in 'root' slot (the web
- * shell renders only 'root'). Owns the grid tracks (sidebar | center |
- * details), the drag handles (pointer capture + rAF throttle), the concession
- * chain (columns.ts), and the child-slot render decisions: the sidebar slot
- * renders HERE with live parameters from the concession solve, and the
- * session-aware occupants render in fixed column positions; strict entries
- * gate themselves on current-session availability while session-maybe
- * entries retain identity. Pure component: everything arrives
- * through the three framework shares — zero cordis or framework imports,
- * zero self-made hooks.
- */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+/** Four-column/two-row DSH frame with official right and bottom workspaces. */
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
 import type { PropsRenderSlots, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
-import { computeColumns, SIDEBAR_AUTO_COLLAPSE, SIDEBAR_DEFAULT } from './columns.ts'
+import { SIDEBAR_AUTO_COLLAPSE, SIDEBAR_DEFAULT } from './columns.ts'
 import type { createLayoutStore } from './stores.ts'
+import { computeWorkspaceGeometry } from './workspace-geometry.ts'
+import type { WorkspaceBottomOwnerProps, WorkspaceRightOwnerProps } from './workspace-layout.ts'
+import { WorkspaceLayoutController } from './workspace-layout.ts'
 import css from './AppFrame.module.css'
 
-/** Full composed props: runtime share + child-slot render share + store share. */
 export type AppFrameProps =
   & PropsRuntime<'root'>
-  & PropsRenderSlots<'sidebar' | 'conversation' | 'details' | 'shell.overlay'>
+  & PropsRenderSlots<'sidebar' | 'conversation' | 'shell.workspace.right' | 'shell.workspace.bottom' | 'details' | 'shell.overlay'>
   & PropsStore<ReturnType<typeof createLayoutStore>>
+  & { workspaceLayout: WorkspaceLayoutController }
 
-/** Center column grid item (session-body building block). */
 function CenterColumn(props: { children?: ReactNode }) {
   return <div className={css.centerCol}>{props.children}</div>
 }
 
-/** Details column grid item; width 0 keeps the subtree mounted (never unmount on close). */
 function DetailsColumn(props: { children?: ReactNode }) {
   return <div className={css.detailsCol}>{props.children}</div>
 }
 
-/**
- * One drag handle: pointer capture, rAF-throttled dx reports against the drag-start origin.
- * `side` keys the hover-reveal CSS to the owning column.
- */
-function DragHandle(props: { side: 'sidebar' | 'details'; left: number; onStart: () => void; onDrag: (dx: number) => void; onEnd: () => void }) {
+interface ResizeHandleProps {
+  readonly side: 'sidebar' | 'right' | 'bottom' | 'details'
+  readonly axis: 'x' | 'y'
+  readonly position: number
+  readonly crossStart?: number
+  readonly crossSize?: number
+  readonly value: number
+  readonly min: number
+  readonly max: number
+  readonly onStart: () => void
+  readonly onDrag: (delta: number) => void
+  readonly onEnd: () => void
+  readonly onKeyboard: (direction: -1 | 1) => void
+}
+
+/** Pointer/rAF and keyboard-equivalent separator shared by every AppFrame track. */
+function ResizeHandle(props: ResizeHandleProps) {
   const [dragging, setDragging] = useState(false)
   const origin = useRef(0)
   const latest = useRef(0)
   const frame = useRef<number | null>(null)
-  const callbacks = useRef({ onStart: props.onStart, onDrag: props.onDrag, onEnd: props.onEnd })
-  callbacks.current = { onStart: props.onStart, onDrag: props.onDrag, onEnd: props.onEnd }
+  const callbacks = useRef(props)
+  callbacks.current = props
 
-  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    origin.current = e.clientX
-    latest.current = e.clientX
+  const coordinate = (event: React.PointerEvent<HTMLDivElement>): number => props.axis === 'x' ? event.clientX : event.clientY
+  const flush = useCallback(() => {
+    if (frame.current !== null) {
+      cancelAnimationFrame(frame.current)
+      frame.current = null
+    }
+    callbacks.current.onDrag(latest.current - origin.current)
+  }, [])
+  const finish = useCallback(() => {
+    setDragging(false)
+    callbacks.current.onEnd()
+  }, [])
+  const onPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    const next = coordinate(event)
+    origin.current = next
+    latest.current = next
     callbacks.current.onStart()
     setDragging(true)
-  }, [])
-  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
-    latest.current = e.clientX
+  }, [props.axis])
+  const onPointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return
+    latest.current = coordinate(event)
     frame.current ??= requestAnimationFrame(() => {
       frame.current = null
       callbacks.current.onDrag(latest.current - origin.current)
     })
-  }, [])
-  const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
-    e.currentTarget.releasePointerCapture(e.pointerId)
-    if (frame.current !== null) { cancelAnimationFrame(frame.current); frame.current = null }
-    callbacks.current.onDrag(latest.current - origin.current)
-    setDragging(false)
-    callbacks.current.onEnd()
+  }, [props.axis])
+  const onPointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return
+    event.currentTarget.releasePointerCapture(event.pointerId)
+    flush()
+    finish()
+  }, [finish, flush])
+  const onPointerCancel = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+    if (frame.current !== null) cancelAnimationFrame(frame.current)
+    frame.current = null
+    finish()
+  }, [finish])
+  const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const direction = props.axis === 'x'
+      ? event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : undefined
+      : event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : undefined
+    if (direction === undefined) return
+    event.preventDefault()
+    callbacks.current.onKeyboard(direction)
+  }, [props.axis])
+  const style: CSSProperties = props.axis === 'x'
+    ? { left: props.position, top: props.crossStart ?? 0, height: props.crossSize }
+    : { top: props.position, left: props.crossStart ?? 0, width: props.crossSize }
+
+  useEffect(() => () => {
+    if (frame.current !== null) cancelAnimationFrame(frame.current)
   }, [])
 
   return (
     <div
       className={css.handle}
-      style={{ left: props.left }}
+      style={style}
       data-side={props.side}
+      data-axis={props.axis}
       data-dragging={dragging || undefined}
+      role="separator"
+      aria-orientation={props.axis === 'x' ? 'vertical' : 'horizontal'}
+      aria-valuemin={props.min}
+      aria-valuemax={props.max}
+      aria-valuenow={Math.round(props.value)}
+      tabIndex={0}
+      onKeyDown={onKeyDown}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
     />
   )
 }
 
-/** The three-column frame (see module doc). */
-export function AppFrame({
-  useStore,
-  useSessions,
-  actions,
-  renderSlot,
-}: AppFrameProps) {
-  const panels = useStore(s => s)
-  const detailsSession = useSessions((s) => {
-    const current = s.current
-    return current !== undefined && s.byId[current]?.blank === false ? current : undefined
+export function AppFrame({ useStore, useSessions, actions, renderSlot, workspaceLayout }: AppFrameProps) {
+  const panels = useStore(state => state)
+  const workspace = useSyncExternalStore(workspaceLayout.subscribe, workspaceLayout.getSnapshot, workspaceLayout.getSnapshot)
+  const detailsSession = useSessions((state) => {
+    const current = state.current
+    return current !== undefined && state.byId[current]?.blank === false ? current : undefined
   })
   const frameRef = useRef<HTMLDivElement | null>(null)
-  const [viewport, setViewport] = useState(() => window.innerWidth)
+  const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }))
 
   const lastSession = useRef(detailsSession)
   useLayoutEffect(() => {
     if (detailsSession === undefined) return
-    if (lastSession.current !== undefined && lastSession.current !== detailsSession) {
-      actions.closeDetails()
-    }
+    if (lastSession.current !== undefined && lastSession.current !== detailsSession) actions.closeDetails()
     lastSession.current = detailsSession
   }, [actions, detailsSession])
 
-  // Track the frame's own box (not the window): rAF-throttled ResizeObserver.
   useEffect(() => {
-    const el = frameRef.current
-    /* v8 ignore next -- the ref is always attached by effect time: the frame div renders unconditionally. */
-    if (el === null) return
+    const element = frameRef.current
+    /* v8 ignore next -- frame is rendered unconditionally. */
+    if (element === null) return
     let raf: number | null = null
     const observer = new ResizeObserver(() => {
       raf ??= requestAnimationFrame(() => {
         raf = null
-        const width = el.getBoundingClientRect().width
-        if (width > 0) setViewport(width)
+        const rect = element.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) setViewport({ width: rect.width, height: rect.height })
       })
     })
-    observer.observe(el)
+    observer.observe(element)
     return () => {
       observer.disconnect()
       if (raf !== null) cancelAnimationFrame(raf)
     }
   }, [])
 
-  // Narrow viewports auto-collapse the sidebar; the store mirror keeps
-  // toggleSidebar's semantics right (narrow toggles flip the manual
-  // re-expand override, stores.ts). Collapsed is decided here, so the
-  // solver stays breakpoint-free: a narrow re-expand passes the preference
-  // (or the default when the wide preference is closed) and the center
-  // absorbs the squeeze.
-  const narrow = viewport < SIDEBAR_AUTO_COLLAPSE
+  useEffect(() => {
+    if (workspace.maximizedRegion === undefined) return
+    const restore = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') workspaceLayout.restoreMaximized()
+    }
+    window.addEventListener('keydown', restore)
+    return () => window.removeEventListener('keydown', restore)
+  }, [workspace.maximizedRegion, workspaceLayout])
+
+  const narrow = viewport.width < SIDEBAR_AUTO_COLLAPSE
   useEffect(() => { actions.setNarrow(narrow) }, [actions, narrow])
   const sidebarCollapsed = narrow ? !panels.narrowExpanded : panels.sidebar === 0
-  const sidebarPreference = sidebarCollapsed
-    ? 0
-    : panels.sidebar === 0 ? SIDEBAR_DEFAULT : panels.sidebar
-  const cols = computeColumns(viewport, sidebarPreference, detailsSession === undefined ? 0 : panels.details)
-  const colsRef = useRef(cols)
-  colsRef.current = cols
+  const sidebarPreference = sidebarCollapsed ? 0 : panels.sidebar === 0 ? SIDEBAR_DEFAULT : panels.sidebar
+  const geometry = computeWorkspaceGeometry({
+    width: viewport.width,
+    height: viewport.height,
+    sidebar: sidebarPreference,
+    details: detailsSession === undefined ? 0 : panels.details,
+    workspace,
+  })
+  const geometryRef = useRef(geometry)
+  geometryRef.current = geometry
 
-  // The drag base is the rendered width captured at drag start (grabbing a
-  // concession-clamped panel must not jump back to the stored preference);
-  // it stays frozen for the whole gesture so dx deltas do not compound.
   const sidebarBase = useRef(0)
   const detailsBase = useRef(0)
-  // Track-level transitions pause for the whole gesture: eased tracks would
-  // detach the column edge from the pointer (AppFrame.module.css).
+  const rightBase = useRef(0)
+  const bottomBase = useRef(0)
   const [dragging, setDragging] = useState(false)
   const onDragEnd = useCallback(() => { setDragging(false) }, [])
-  const onSidebarStart = useCallback(() => { sidebarBase.current = colsRef.current.sidebar; setDragging(true) }, [])
-  const onDetailsStart = useCallback(() => { detailsBase.current = colsRef.current.details; setDragging(true) }, [])
-  const onSidebarDrag = useCallback((dx: number) => {
-    actions.setSidebar(sidebarBase.current + dx)
-  }, [actions])
-  const onDetailsDrag = useCallback((dx: number) => {
-    actions.setDetails(detailsBase.current - dx)
-  }, [actions])
+
+  const rightOwner: WorkspaceRightOwnerProps = {
+    region: 'right',
+    mode: geometry.rightMode,
+    width: geometry.coverRegion === 'right' ? Math.max(0, viewport.width - geometry.sidebar) : geometry.rightWidth,
+    height: viewport.height,
+    visible: geometry.rightMode !== 'hidden',
+    maximized: geometry.rightMode === 'maximized',
+  }
+  const bottomOwner: WorkspaceBottomOwnerProps = {
+    region: 'bottom',
+    mode: geometry.bottomMode,
+    width: geometry.coverRegion === 'bottom' ? Math.max(0, viewport.width - geometry.sidebar) : geometry.conversationWidth,
+    height: geometry.coverRegion === 'bottom' ? viewport.height : geometry.bottomHeight,
+    visible: geometry.bottomMode !== 'hidden',
+    maximized: geometry.bottomMode === 'maximized',
+  }
 
   return (
     <div
       ref={frameRef}
       className={css.frame}
-      style={{ gridTemplateColumns: `${cols.sidebar}px minmax(0, 1fr) ${cols.details}px` }}
+      style={{
+        gridTemplateColumns: `${geometry.sidebar}px minmax(0, ${geometry.conversationWidth}px) ${geometry.rightWidth}px ${geometry.detailsWidth}px`,
+        gridTemplateRows: `${geometry.conversationHeight}px ${geometry.bottomHeight}px`,
+      }}
       data-sidebar-collapsed={sidebarCollapsed || undefined}
-      data-details-collapsed={cols.details === 0 || undefined}
+      data-details-collapsed={geometry.detailsWidth === 0 || undefined}
+      data-right-mode={geometry.rightMode}
+      data-bottom-mode={geometry.bottomMode}
+      data-workspace-cover={geometry.coverRegion}
       data-dragging={dragging || undefined}
     >
       <div className={css.sidebarCol}>
-        {/* Render-site slot call with live concession output: a closed
-            sidebar keeps the mounted slot at the compact-rail width, and the
-            component sees its rendered state as owner params decided here
-            (collapsed follows the resolved rail, so a derived auto-collapse
-            renders the rail UI too). */}
-        {renderSlot('sidebar', {
-          collapsed: sidebarCollapsed,
-          width: cols.sidebar,
-        })}
+        {renderSlot('sidebar', { collapsed: sidebarCollapsed, width: geometry.sidebar })}
       </div>
-      <>
-        {/* Both column occupants stay at fixed tree positions from first
-            paint — no loading gate: a bare status line reads worse than
-            the shell's own pending rendering. The conversation
-            is session-maybe; the strict details entry naturally renders
-            empty while no session is current. */}
-        <CenterColumn>{renderSlot('conversation', {})}</CenterColumn>
-        <DetailsColumn>{renderSlot('details', {})}</DetailsColumn>
-      </>
-      <div className={css.overlayLayer} data-shell-overlay>
-        {renderSlot('shell.overlay', {})}
+      <CenterColumn>{renderSlot('conversation', {})}</CenterColumn>
+      <div className={css.rightWorkspaceCol} data-workspace-region="right" data-mode={geometry.rightMode}>
+        {renderSlot('shell.workspace.right', rightOwner)}
       </div>
-      {/* The collapsed rail is fixed-width: no resize handle while closed. */}
-      {!sidebarCollapsed && <DragHandle side="sidebar" left={cols.sidebar} onStart={onSidebarStart} onDrag={onSidebarDrag} onEnd={onDragEnd} />}
-      {cols.details > 0 && <DragHandle side="details" left={viewport - cols.details} onStart={onDetailsStart} onDrag={onDetailsDrag} onEnd={onDragEnd} />}
+      <div className={css.bottomWorkspaceCol} data-workspace-region="bottom" data-mode={geometry.bottomMode}>
+        {renderSlot('shell.workspace.bottom', bottomOwner)}
+      </div>
+      <DetailsColumn>{renderSlot('details', {})}</DetailsColumn>
+      <div className={css.overlayLayer} data-shell-overlay>{renderSlot('shell.overlay', {})}</div>
+
+      {!sidebarCollapsed && <ResizeHandle
+        side="sidebar" axis="x" position={geometry.sidebar}
+        value={geometry.sidebar} min={264} max={420}
+        onStart={() => { sidebarBase.current = geometryRef.current.sidebar; setDragging(true) }}
+        onDrag={delta => actions.setSidebar(sidebarBase.current + delta)}
+        onEnd={onDragEnd}
+        onKeyboard={direction => actions.setSidebar(geometryRef.current.sidebar + direction * 16)}
+      />}
+      {geometry.rightMode === 'dock' && <ResizeHandle
+        side="right" axis="x" position={geometry.sidebar + geometry.conversationWidth}
+        value={geometry.rightWidth} min={360} max={840}
+        onStart={() => { rightBase.current = geometryRef.current.rightWidth; setDragging(true) }}
+        onDrag={delta => workspaceLayout.updateGeometry({ rightWidth: rightBase.current - delta })}
+        onEnd={onDragEnd}
+        onKeyboard={direction => workspaceLayout.updateGeometry({ rightWidth: geometryRef.current.rightWidth - direction * 16 })}
+      />}
+      {geometry.bottomMode === 'dock' && <ResizeHandle
+        side="bottom" axis="y" position={geometry.conversationHeight}
+        crossStart={geometry.sidebar} crossSize={geometry.conversationWidth}
+        value={geometry.bottomHeight} min={180} max={Math.floor(viewport.height * 0.65)}
+        onStart={() => { bottomBase.current = geometryRef.current.bottomHeight; setDragging(true) }}
+        onDrag={delta => workspaceLayout.updateGeometry({ bottomRatio: (bottomBase.current - delta) / Math.max(1, viewport.height) })}
+        onEnd={onDragEnd}
+        onKeyboard={direction => workspaceLayout.updateGeometry({ bottomRatio: (geometryRef.current.bottomHeight - direction * 16) / Math.max(1, viewport.height) })}
+      />}
+      {geometry.detailsWidth > 0 && <ResizeHandle
+        side="details" axis="x" position={viewport.width - geometry.detailsWidth}
+        value={geometry.detailsWidth} min={300} max={520}
+        onStart={() => { detailsBase.current = geometryRef.current.detailsWidth; setDragging(true) }}
+        onDrag={delta => actions.setDetails(detailsBase.current - delta)}
+        onEnd={onDragEnd}
+        onKeyboard={direction => actions.setDetails(geometryRef.current.detailsWidth - direction * 16)}
+      />}
     </div>
   )
 }
