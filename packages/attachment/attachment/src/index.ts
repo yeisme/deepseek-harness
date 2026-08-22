@@ -131,3 +131,16 @@ export abstract class AttachmentStore extends Service {
 }
 
 export default AttachmentStore
+
+export {
+  PREVIEW_RESOURCE_CAPABILITY,
+  hasPreviewResourceCapability,
+  isOpaquePreviewId,
+  sniffPreviewMediaType,
+} from './preview.ts'
+export type {
+  PreviewReadRequest,
+  PreviewReadResult,
+  PreviewResourceRef,
+  PreviewResourceSource,
+} from './preview.ts'
