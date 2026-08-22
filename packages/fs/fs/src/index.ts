@@ -250,3 +250,16 @@ export abstract class FileSystem extends Service {
 }
 
 export default FileSystem
+
+export {
+  FILE_WATCH_CAPABILITY,
+  hasFileWatchCapability,
+  isOpaqueWatchRef,
+  assertWatchEvent,
+} from './watch.ts'
+export type {
+  FileWatchEventV1,
+  FileWatchHandle,
+  FileWatchOp,
+  FileWatchSource,
+} from './watch.ts'
