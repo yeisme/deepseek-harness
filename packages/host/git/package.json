@@ -1,0 +1,16 @@
+{
+  "name": "@deepseek-ai/dsh-host-git",
+  "description": "Typed Git action contract for the DeepSeek Harness host",
+  "version": "0.1.1-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/host/git"
+  },
+  "type": "module",
+  "main": "src/typed-actions.ts",
+  "license": "MIT"
+}
