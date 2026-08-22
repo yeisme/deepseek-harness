@@ -200,3 +200,16 @@ function capSources(result: WebSearchResult, maxResults: number | undefined): We
 }
 
 export default WebRuntime
+
+export {
+  COOKIE_JARS_CAPABILITY,
+  hasCookieJarsCapability,
+  isSafeCookieJarProfile,
+  redactCookieJarReceipt,
+} from './cookie-jars.ts'
+export type {
+  CookieJarAction,
+  CookieJarProfileRef,
+  CookieJarReceipt,
+  CookieJarSource,
+} from './cookie-jars.ts'
