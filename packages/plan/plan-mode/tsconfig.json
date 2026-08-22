@@ -33,6 +33,9 @@
       "path": "../../interaction/commands"
     },
     {
+      "path": "../../interaction/permission-presets"
+    },
+    {
       "path": "../../session/session-projection"
     },
     {

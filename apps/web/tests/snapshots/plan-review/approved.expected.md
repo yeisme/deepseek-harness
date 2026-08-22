@@ -17,6 +17,10 @@
   - img
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
+- button "Context injection plan-mode Submit a complete plan through exit_plan_mode.":
+  - img
+  - img
+  - text: Context injection plan-mode Submit a complete plan through exit_plan_mode.
 - 'button "Think The user wants me to plan a small change to add a `--greeting` flag to a CLI. They explicitly told me not to read or write any files, and to call exit_plan_mode with a short plan. Let me do that directly."':
   - img
   - img
@@ -29,6 +33,10 @@
   - img
   - img
   - text: "Tool call exit_plan_mode · # Add `--greeting` flag to CLI"
+- button "Context injection plan-mode Execute the approved plan.":
+  - img
+  - img
+  - text: Context injection plan-mode Execute the approved plan.
 - 'button "Think The plan was approved. The user''s last instruction says: \"Once the plan is approved, reply with the single word DONE and stop.\" So I should just reply with DONE and stop."':
   - img
   - img
@@ -42,7 +50,11 @@
   - img
 - button "Branch into a new conversation":
   - img
-- text: {{clock}} Ran for {{duration}} TTFT {{duration}} {{throughput}} tok/s
+- text: "{{clock}} Ran for {{duration}} TTFT {{duration}} {{throughput}} tok/s Plan document Executing Add `--greeting` flag to CLI"
+- button "Edit plan document":
+  - img
+- button "Expand plan document":
+  - img
 - textbox "Message the agent"
 - button "Commands":
   - img

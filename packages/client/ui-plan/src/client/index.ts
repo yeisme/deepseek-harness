@@ -1,11 +1,11 @@
 /**
  * Plan control plugin, browser half: occupies the composer's named
- * `conversation.input.plan` seat with an active-state status chip. Plan mode
- * is entered through the command source; while the projection's effective
- * target is plan mode the chip renders and executes /plan off through
- * `command.execute`, otherwise the seat stays empty. Reads ride the generic
- * projection pair through the standard-kit `useProjection`; zero client-side
- * plan state.
+ * `conversation.input.plan` seat with an active warn chip and an inactive
+ * entry chip. While the projection's effective target is plan mode the chip
+ * executes /plan off through `command.execute`; while the effective target is
+ * the default mode it executes /plan to enter plan mode directly. Reads ride
+ * the generic projection pair through the standard-kit `useProjection`; zero
+ * client-side plan state.
  */
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type { ClientContext, SessionId } from '@deepseek-ai/dsh-client-runtime/client'
@@ -16,6 +16,12 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: pulls the `plan` SessionProjectionMap merge for useProjection.
 import type {} from '@deepseek-ai/dsh-plan-mode/client'
 import { PlanChip } from './PlanModeControl.tsx'
+import { PlanDocumentDock, type PlanDocumentActions } from './PlanDocumentPanel.tsx'
+import {
+  openPlanPane,
+  registerPlanPaneView,
+  type PlanPaneWorkbenchFace,
+} from './PlanPaneView.tsx'
 import { en, zh, type PlanKey } from './locales.ts'
 
 export type { PlanKey } from './locales.ts'
@@ -37,10 +43,19 @@ export interface PlanChipInjected {
    * @returns null on admitted execution; a user-visible failure line otherwise.
    */
   exitPlanMode: () => Promise<string | null>
+  /**
+   * Enter plan mode by executing /plan.
+   * @returns null on admitted execution; a user-visible failure line otherwise.
+   */
+  enterPlanMode: () => Promise<string | null>
 }
 
 /** Required services: the seat's slot registry, commands Remote, and locale registry. */
 export const inject = ['slots', 'remote', 'remote.commands', 'locale']
+
+function paneWorkbench(ctx: ClientContext): PlanPaneWorkbenchFace | undefined {
+  return ctx.get('paneWorkbench') as PlanPaneWorkbenchFace | undefined
+}
 
 /**
  * Client plugin body: register the plan chip over the command channel.
@@ -60,6 +75,43 @@ export function apply(ctx: ClientContext): void {
         if (result.value === undefined) return 'unknown command: /plan off'
         return null
       },
+      enterPlanMode: async () => {
+        const result = await ctx.remote.commands.execute(sessionId, '/plan', [])
+        if (!result.ok) return `${result.error.message} (${result.error.code})`
+        if (result.value === undefined) return 'unknown command: /plan'
+        return null
+      },
     }),
   }, PlanChip))
+
+  ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({
+    name: 'conversation.input.dock',
+    id: 'plan-document',
+    order: 1,
+    locale: NS,
+    inject: (sessionId: SessionId): PlanDocumentActions => ({
+      onUpdate: async (title, markdown) => {
+        const result = await ctx.remote.commands.execute(
+          sessionId,
+          `/plan-edit ${JSON.stringify({ title, markdown })}`,
+          [],
+        )
+        if (!result.ok) return { ok: false, error: `${result.error.message} (${result.error.code})` }
+        if (result.value === undefined) return { ok: false, error: 'unknown command: /plan-edit' }
+        return { ok: true }
+      },
+      ...(paneWorkbench(ctx) === undefined ? {} : {
+        onOpenWorkspace: () => {
+          const pane = paneWorkbench(ctx)
+          if (pane !== undefined) openPlanPane(pane)
+        },
+      }),
+    }),
+  }, PlanDocumentDock))
+
+  ctx.inject(['paneWorkbench' as never], (scope: ClientContext) => {
+    const pane = paneWorkbench(scope)
+    if (pane === undefined) return
+    return registerPlanPaneView(scope, pane)
+  })
 }

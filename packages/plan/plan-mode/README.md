@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-Logged, per-agent plan collaboration state with deployment-owned guidance, direct `/plan [message]` entry and `/plan off` exit commands, and the reviewed `exit_plan_mode` exit. Plan mode is soft guidance; sandbox mode and approval policy enforce restrictions independently and do not read or write plan state.
+Logged, per-agent plan collaboration state with deployment-owned guidance, direct `/plan [message]` entry and `/plan off` exit commands, a structured `plan_form` clarification form, and the reviewed `exit_plan_mode` exit that persists each submitted plan as a whole-value `plan/document` event. Plan mode is soft guidance; sandbox mode and approval policy enforce restrictions independently and do not read or write plan state.
 
 ## Durable state
 
@@ -12,17 +12,21 @@ Logged, per-agent plan collaboration state with deployment-owned guidance, direc
 
 ## Model and human interactions
 
-While active, `plan:policy` renders the configured `section`. The plugin always registers `exit_plan_mode`, keeping tool schemas stable across the transition; its execute path accepts only active plan mode and leaves it only after an exact user approval through `ctx.userQuestions`.
+While active, `plan:policy` renders the configured `section`. The plugin always registers `exit_plan_mode` and `plan_form`, keeping tool schemas stable across the transition. `plan_form` asks the user one structured planning form (one or more questions, options, custom text) and logs the request/answer pair before returning the answers to the model. `exit_plan_mode` accepts only active plan mode, persists the submitted plan as `plan/document` (`proposed`), and leaves plan mode only after an exact user approval through `ctx.userQuestions`; approval or rejection appends the matching `plan/document` status.
 
 The review question declares the `plan-review` presentation intent, naming `Approve` as the label that approves it, so a capable UI presents the plan as a decision instead of a generic question; the answer the tool reads is the same either way. A dismissed review — the user closing the request to speak instead — is reported to the model as such, telling it to stay in plan mode and wait for the message; every other review failure keeps the seam's own message.
 
-When `ctx.commands` is composed, the package registers `/plan [message]` and reserves the exact argument `off` for direct exit. Bare `/plan` selects plan mode; any other non-empty argument selects it first and is then submitted through `agent.steer()`, so it becomes the next step's ordinary logged user message under plan guidance. `/plan off` selects inactive without sending model input; it also cancels a pending entry before plan mode reaches a request. The command declares `input.images`: composer image attachments ride the steered message ahead of its text block. Bare `/plan` with images steers an image-only user message, while `/plan off` with images returns a direct error before any mode change so the composer keeps them.
+When `ctx.commands` is composed, the package registers `/plan [message]` and reserves the exact argument `off` for direct exit. Bare `/plan` selects plan mode; any other non-empty argument selects it first and is then submitted through `agent.steer()`, so it becomes the next step's ordinary logged user message under plan guidance. `/plan off` selects inactive without sending model input; it also cancels a pending entry before plan mode reaches a request.
+
+When `ctx.commands` is composed, the package also registers `/plan-edit <json>` for the Web plan-document dock's inline editor. It accepts JSON `{ title?, markdown }`, reads the latest `plan/document`, and appends a new `proposed` revision; if the current status is `approved`/`executing`/`completed`, the old document is first marked `superseded`.
+
+When both `ctx.commands` and `ctx.permissionPresets` are composed, the package also registers the optional one-key bridge `/plan-readonly [message]`: it selects plan mode, switches the session permission preset to `read-only`, then submits the optional message under plan guidance. The bridge reads/writes permission state through `ctx.permissionPresets`, never through plan state itself.
 
 The Web client consumes the plugin-owned `/plan` command; other entry points may drive the same service directly without defining a second mode vocabulary.
 
 ## Session projection
 
-When the composition mounts `ctx.sessionProjections` ([`@deepseek-ai/dsh-session-projection`](../../session/session-projection/README.md)), this package registers the `plan` projection unit under an injected child. A `command/run` record named `plan` with recorded `args` starts a candidate target (`off` → inactive, anything else → active); its paired `command/done` retains a successful selection and drops an error; `plan/mode` commits the logged state and clears the retained selection. Every other event returns the same state reference. `view` derives `{ active, pending }`, where `pending` is true only while an unsettled or successful selection differs from the logged state. This remains a pure replay quantity, so host restarts, other tabs, and cold reads recover it from the log alone, and a rejected `/plan off` with images cannot leave a pending exit. The key merges into `SessionProjectionMap` from `src/types.ts` (served to host consumers via `./types` and client aggregates via `./client`); the framework drives the unit and carriers serve the value on the history tail page and the `session/projection` push frame. Compositions without the registry are unaffected.
+When the composition mounts `ctx.sessionProjections` ([`@deepseek-ai/dsh-session-projection`](../../session/session-projection/README.md)), this package registers the `plan`, `plan-document`, `plan-options`, and `plan-tasks` projection units under an injected child. A `command/run` record named `plan` with recorded `args` starts a candidate target (`off` → inactive, anything else → active); its paired `command/done` retains a successful selection and drops an error; `plan/mode` commits the logged state and clears the retained selection. `plan-document` / `plan-options` / `plan-tasks` fold the matching whole-value-replace events. `view` derives `{ active, pending }`, where `pending` is true only while an unsettled or successful selection differs from the logged state. This remains a pure replay quantity, so host restarts, other tabs, and cold reads recover it from the log alone, and a rejected `/plan off` with images cannot leave a pending exit. The key merges into `SessionProjectionMap` from `src/types.ts` (served to host consumers via `./types` and client aggregates via `./client`); the framework drives the unit and carriers serve the value on the history tail page and the `session/projection` push frame. Compositions without the registry are unaffected.
 
 ## Configuration
 
@@ -65,11 +69,11 @@ The section is stable within plan mode, but entering or leaving changes the syst
 
 #### What the model sees
 
-`/plan`, `/plan off`, and their terminal results stay outside model history. A non-empty suffix other than the exact `off` argument becomes one user message through `agent.steer()` after plan mode is selected: any admitted image attachments as leading image blocks, then the trimmed text block. Bare `/plan` with admitted images steers one user message containing only those image blocks. An active `/plan off` selection contributes the standard logged user-switch notice only when the last request header described plan mode; cancelling a pending entry contributes none because no request observed it.
+`/plan`, `/plan off`, and their terminal results stay outside model history. A non-empty suffix other than the exact `off` argument becomes one trimmed user text block through `agent.steer()` after plan mode is selected. An active `/plan off` selection contributes the standard logged user-switch notice only when the last request header described plan mode; cancelling a pending entry contributes none because no request observed it.
 
 #### Token effect
 
-The optional message costs the same history tokens as submitting that content separately. Bare `/plan` without images and `/plan off` add none; bare `/plan` with images has the normal image-prompt cost. A narrated active exit adds the small retained switch notice.
+The optional message costs the same history tokens as submitting that text separately; bare `/plan` and `/plan off` add none. A narrated active exit adds the small retained switch notice.
 
 #### KV Cache effect
 
@@ -80,6 +84,12 @@ The user block is append-only conversation growth. Entering or leaving plan mode
 #### What the model sees
 
 The [`exit_plan_mode` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-mode) remains available in both states; execution outside plan mode fails, while an approved in-mode review returns the canonical `{ approved: true }` value and renders the existing confirmation text. Rejection remains a failed call carrying review feedback, and a dismissed review a failed call naming the user's takeover.
+
+### Planning form
+
+#### What the model sees
+
+The [`plan_form` schema](../../../docs/tool-catalog.md#deepseek-aidsh-plan-form) is available in both states; execution outside plan mode fails. In plan mode it sends one form of questions to the user and returns the structured answers. Every form round is logged as `plan/form/request` + `plan/form/answer`; the final `plan/document` cites their event seqs in `sourceEventSeqs`.
 
 #### Token effect
 

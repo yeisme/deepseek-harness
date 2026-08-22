@@ -82,7 +82,7 @@ describe('plan mode through the agent loop', () => {
     const header = findEvent(log, 'request/header')
     expect(planMode.seq).toBeLessThan(header.seq)
     expect(header.data.reason).toBe('initial')
-    expect(header.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'read', 'write'])
+    expect(header.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'plan_complete', 'plan_form', 'read', 'write'])
     expect(header.data.header.system).toContain('plan mode')
 
     // No tool gate: the write RUNS — plan restrains by the section's
@@ -91,7 +91,9 @@ describe('plan mode through the agent loop', () => {
     const result = findEvent(log, 'tool/result')
     expect(result.data.message.content[0].isError).toBe(false)
     expect(foldPlanMode(log)).toBe(true)
-    expect(log.some(event => event.type === 'user/message' && event.data.source.kind === 'plugin')).toBe(false)
+    expect(log.some(event => event.type === 'user/message' && event.data.source.kind === 'plugin'
+      && event.data.content[0]?.type === 'text'
+      && event.data.content[0].text?.startsWith('You are still in plan mode'))).toBe(true)
   })
 
   it('a user flip between turns lands at the boundary: one notice and a changed header with stable tool schemas', async () => {
@@ -106,7 +108,7 @@ describe('plan mode through the agent loop', () => {
     await waitForIdle(ctx, agent)
     expect(foldPlanMode(agent.session.events)).toBe(false)
     const first = findEvent(agent.session.events, 'request/header')
-    expect(first.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'read', 'write'])
+    expect(first.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'plan_complete', 'plan_form', 'read', 'write'])
 
     ctx.planMode.set(agent, true)
     agent.followup(createUserMessage({ content: [{ type: 'text', text: 'now plan' }], source: { kind: 'user' } }))
@@ -115,14 +117,15 @@ describe('plan mode through the agent loop', () => {
     const log = agent.session.events
     expect(foldPlanMode(log)).toBe(true)
     const notices = log.filter(event => event.type === 'user/message' && event.data.source.kind === 'plugin')
-    expect(notices).toHaveLength(1)
-    expect(notices[0]?.type === 'user/message' && notices[0].data.content).toEqual([
-      { type: 'text', text: 'The user switched this session to plan mode.' },
-    ])
+    expect(notices).toHaveLength(2)
+    const noticeTexts = notices.map(event =>
+      (event.type === 'user/message' && event.data.content[0]?.type === 'text' ? event.data.content[0].text : ''))
+    expect(noticeTexts).toContain('The user switched this session to plan mode.')
+    expect(noticeTexts.some(text => text?.startsWith('You are still in plan mode'))).toBe(true)
     // The changed request is logged as a complete snapshot.
     const second = findEvent(log, 'request/header', 'last')
     expect(second.data.reason).toBe('change')
-    expect(second.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'read', 'write'])
+    expect(second.data.header.tools?.map(tool => tool.name)).toEqual(['exit_plan_mode', 'plan_complete', 'plan_form', 'read', 'write'])
     expect(second.data.header.tools).toEqual(first.data.header.tools)
     expect(second.data.header.system).toContain('plan mode')
   })

@@ -11,7 +11,7 @@ import UserQuestionService, {
 } from '@deepseek-ai/dsh-user-questions'
 import CommandRuntime from '@deepseek-ai/dsh-commands'
 import { CodeRuntime, type CodeRunRequest, type CodeRunResult } from '@deepseek-ai/dsh-code-runtime'
-import PlanModeController, { EXIT_PLAN_MODE, foldPlanMode, resolveConfig } from '../src/index.ts'
+import PlanModeController, { EXIT_PLAN_MODE, PLAN_COMPLETE_TOOL, PLAN_FORM_TOOL, foldPlanDocument, foldPlanMode, planIdForSession, planRoundForSession, resolveConfig } from '../src/index.ts'
 import type { PlanModeConfig } from '../src/index.ts'
 
 const TEST_PLAN_SECTION = 'Test plan mode instructions.'
@@ -40,6 +40,7 @@ async function agentWithSession(
     inject(message: UserMessage) {
       session.append('user/message', message, { surfaceOp: 'append' })
     },
+    steer: vi.fn(),
   } as unknown as Agent & { session: Session }
   let scoped!: Context
   await ctx.plugin(Object.assign((inner: Context) => { scoped = createScope(inner, agent).ctx }, {
@@ -120,6 +121,18 @@ function noticeTexts(session: Session): string[] {
     .map(event => (event.data as { content: { type: string; text?: string }[] }).content.map(block => block.text ?? '').join(''))
 }
 
+/** Seed a submitted plan so the forced-output reminder does not fire in narration tests. */
+function seedSubmittedPlan(session: Session): void {
+  session.append('plan/document', {
+    planId: 'plan-1',
+    title: 'P',
+    markdown: '# P',
+    status: 'proposed',
+    round: 1,
+    sourceEventSeqs: [],
+  })
+}
+
 function registerNamedTools(ctx: Context, names: string[]): void {
   for (const name of names) {
     ctx.tools.register(defineContentToolFixture({
@@ -191,6 +204,28 @@ describe('foldPlanMode', () => {
     session.append('plan/mode', { active: false })
     expect(foldPlanMode(session.events, 1)).toBe(true)
     expect(foldPlanMode(session.events, 0)).toBe(false)
+  })
+})
+
+describe('planIdForSession / planRoundForSession', () => {
+  it('derives a fresh plan id and round after leaving and re-entering plan mode', () => {
+    const session = Session.create(SessionId('plan-session-reset'))
+    expect(planIdForSession(session.events)).toBe(`plan-${session.events.length}`)
+    expect(planRoundForSession(session.events)).toBe(1)
+    session.append('plan/mode', { active: true })
+    session.append('plan/document', {
+      planId: 'plan-1',
+      title: 'First', markdown: '# First', status: 'proposed', round: 1, sourceEventSeqs: [],
+    })
+    expect(planIdForSession(session.events)).toBe('plan-1')
+    expect(planRoundForSession(session.events)).toBe(2)
+
+    session.append('plan/mode', { active: false })
+    expect(planIdForSession(session.events)).toBe(`plan-${session.events.length}`)
+    expect(planRoundForSession(session.events)).toBe(1)
+    session.append('plan/mode', { active: true })
+    expect(planIdForSession(session.events)).toBe(`plan-${session.events.length}`)
+    expect(planRoundForSession(session.events)).toBe(1)
   })
 })
 
@@ -315,6 +350,7 @@ describe('the boundary flush', () => {
     const ctx = await setup()
     const agent = await agentWithSession(ctx)
     ctx.planMode.set(agent, true)
+    seedSubmittedPlan(agent.session)
     await boundary(ctx, agent, 'pre-step')
     expect(noticeTexts(agent.session)).toEqual([])
   })
@@ -324,6 +360,7 @@ describe('the boundary flush', () => {
     const agent = await agentWithSession(ctx)
     header(agent.session)
     ctx.planMode.set(agent, true)
+    seedSubmittedPlan(agent.session)
     await boundary(ctx, agent, 'step-start')
     expect(noticeTexts(agent.session)).toEqual(['The user switched this session to plan mode.'])
     await boundary(ctx, agent, 'step-start')
@@ -347,6 +384,7 @@ describe('the boundary flush', () => {
     header(agent.session)
     agent.session.append('plan/mode', { active: false })
     ctx.planMode.set(agent, true)
+    seedSubmittedPlan(agent.session)
     await boundary(ctx, agent, 'step-start')
     expect(foldPlanMode(agent.session.events)).toBe(true)
     expect(noticeTexts(agent.session)).toEqual([])
@@ -403,7 +441,7 @@ describe('the soft layer', () => {
     registerNamedTools(ctx, ['read', 'write'])
     const agent = await agentWithSession(ctx)
     const defaultAssembly = await assembleFor(ctx, agent)
-    expect(defaultAssembly.tools.map(tool => tool.name)).toEqual([EXIT_PLAN_MODE, 'read', 'write'])
+    expect(defaultAssembly.tools.map(tool => tool.name)).toEqual([EXIT_PLAN_MODE, PLAN_COMPLETE_TOOL, PLAN_FORM_TOOL, 'read', 'write'])
     expect(defaultAssembly.sections.find(section => section.name === 'plan:policy')?.text).toBe('')
 
     agent.session.append('plan/mode', { active: true })
@@ -416,7 +454,7 @@ describe('the soft layer', () => {
     const ctx = await setup()
     registerNamedTools(ctx, ['read'])
     const assembly = await ctx.systemPrompt.assemble()
-    expect(assembly.tools.map(tool => tool.name)).toEqual([EXIT_PLAN_MODE, 'read'])
+    expect(assembly.tools.map(tool => tool.name)).toEqual([EXIT_PLAN_MODE, PLAN_COMPLETE_TOOL, PLAN_FORM_TOOL, 'read'])
     expect(assembly.sections.find(section => section.name === 'plan:policy')?.text).toBe('')
   })
 
@@ -425,7 +463,7 @@ describe('the soft layer', () => {
     registerNamedTools(ctx, ['read', 'write', 'todo_write'])
     const agent = await agentWithSession(ctx, 'agent-1', { active: true })
     const assembly = await assembleFor(ctx, agent)
-    expect(assembly.tools.map(tool => tool.name).sort()).toEqual([EXIT_PLAN_MODE, 'read', 'todo_write', 'write'])
+    expect(assembly.tools.map(tool => tool.name).sort()).toEqual([EXIT_PLAN_MODE, PLAN_COMPLETE_TOOL, PLAN_FORM_TOOL, 'read', 'todo_write', 'write'])
     expect(assembly.sections.find(section => section.name === 'plan:policy')?.text).toBe(TEST_PLAN_SECTION)
   })
 
@@ -443,10 +481,10 @@ describe('the soft layer', () => {
     registerNamedTools(ctx, ['read'])
     const planning = await agentWithSession(ctx, 'planning', { active: true })
     expect((await assembleFor(ctx, planning)).tools.map(tool => tool.name))
-      .toEqual(['exit_plan_mode', 'read', 'added-later'])
+      .toEqual(['exit_plan_mode', 'plan_complete', 'plan_form', 'read', 'added-later'])
     const defaulted = await agentWithSession(ctx, 'defaulted')
     expect((await assembleFor(ctx, defaulted)).tools.map(tool => tool.name))
-      .toEqual(['exit_plan_mode', 'read', 'added-later'])
+      .toEqual(['exit_plan_mode', 'plan_complete', 'plan_form', 'read', 'added-later'])
   })
 
   it('keeps run_code the only wire tool in plan mode under the registry Code Mode; the SDK gains the exit binding', async () => {
@@ -488,7 +526,7 @@ describe('the soft layer', () => {
     const assembly = await assembleFor(ctx, agent)
     // The stable registry contribution reaches both model interfaces: the exit tool
     // is present on the wire AND in the SDK alongside the untouched toolset.
-    expect(assembly.tools.map(tool => tool.name).sort()).toEqual(['exit_plan_mode', 'read', 'run_code', 'write'])
+    expect(assembly.tools.map(tool => tool.name).sort()).toEqual(['exit_plan_mode', 'plan_complete', 'plan_form', 'read', 'run_code', 'write'])
     const sdk = assembly.sections.find(section => section.name === 'tools:sdk')?.text ?? ''
     expectPlanCodeSdkBindings(sdk)
   })
@@ -561,7 +599,9 @@ describe('/plan', () => {
     const plainSteer = vi.fn()
     ;(plainAgent as unknown as { steer: typeof plainSteer }).steer = plainSteer
     expect(ctx.commands.list(plainAgent)).toEqual([
-      { name: 'plan', description: 'Enter or leave plan mode', input: { hint: '[off|message]', images: true } },
+      { name: 'plan', description: 'Enter or leave plan mode', input: { hint: '[off|message]' } },
+      { name: 'plan-edit', description: 'Edit the current plan document from JSON input', input: { hint: '<json>' } },
+      { name: 'plan-select', description: 'Select one proposed plan option from JSON input', input: { hint: '<json>' } },
     ])
 
     const signal = new AbortController().signal
@@ -631,6 +671,32 @@ describe('/plan', () => {
     expect(ctx.planMode.get(active)).toEqual({ active: false })
   })
 
+  it('registers /plan-readonly only when permission-presets is composed, and switches both knobs', async () => {
+    const bare = await setup()
+    await bare.plugin(CommandRuntime)
+    await new Promise(resolve => setImmediate(resolve))
+    const bareAgent = await agentWithSession(bare, 'bare-plan-readonly')
+    expect(bare.commands.list(bareAgent).map(command => command.name)).toEqual(['plan', 'plan-edit', 'plan-select'])
+
+    const ctx = await setup()
+    const set = vi.fn()
+    ctx.provide('permissionPresets', { set })
+    await ctx.plugin(CommandRuntime)
+    await new Promise(resolve => setImmediate(resolve))
+    const agent = await agentWithSession(ctx, 'plan-readonly-agent')
+    openTurn(agent.session)
+    expect(ctx.commands.list(agent).map(command => command.name)).toEqual(['plan', 'plan-edit', 'plan-readonly', 'plan-select'])
+
+    const signal = new AbortController().signal
+    const result = await ctx.commands.execute(agent, '/plan-readonly', [], signal)
+    expect(result?.result).toEqual({
+      kind: 'success',
+      text: 'Entering plan mode with read-only file policy (applies from the next step).',
+    })
+    expect(ctx.planMode.get(agent)).toEqual({ active: false, pending: true })
+    expect(set).toHaveBeenCalledExactlyOnceWith(agent.session, 'read-only')
+  })
+
   it('idle sessions get the immediate-commit copy on both /plan and /plan off', async () => {
     const ctx = await setup()
     await ctx.plugin(CommandRuntime)
@@ -645,70 +711,50 @@ describe('/plan', () => {
     expect(foldPlanMode(agent.session.events)).toBe(false)
   })
 
-  it('steers image attachments with or without text and refuses them on /plan off', async () => {
+  it('edits the latest plan document from JSON and supersedes an executing plan', async () => {
     const ctx = await setup()
     await ctx.plugin(CommandRuntime)
     await new Promise(resolve => setImmediate(resolve))
-    let saved = 0
-    const saveImage = (input: { mediaType: string }) => {
-      saved += 1
-      return Promise.resolve({
-        attachmentId: `att-${saved}`, mediaType: input.mediaType, bytes: 3, width: 1, height: 1,
-      })
-    }
-    ctx.provide('attachments', {
-      imageLimits: {
-        maxImageBytes: 1024, maxImagesPerMessage: 4, maxMessageImageBytes: 1024,
-        maxImagePixels: 1_000_000, mediaTypes: ['image/png'],
-      },
-      validateImage: () => Promise.resolve(),
-      saveImage,
-      async saveImages(inputs: readonly { mediaType: string }[]) {
-        const refs = []
-        for (const input of inputs) refs.push(await saveImage(input))
-        return refs
-      },
+    const agent = await agentWithSession(ctx, 'edit-plan-command')
+    agent.session.append('plan/document', {
+      planId: 'plan-1',
+      title: 'Old',
+      markdown: '# Old',
+      status: 'executing',
+      round: 1,
+      sourceEventSeqs: [],
     })
+
     const signal = new AbortController().signal
-    const images = [{ mediaType: 'image/png' as const, data: 'AAAA' }]
+    const result = await ctx.commands.execute(
+      agent,
+      `/plan-edit ${JSON.stringify({ title: 'New', markdown: '# New\n\nChanged.' })}`,
+      [],
+      signal,
+    )
+    expect(result?.result).toEqual({ kind: 'success', text: 'Plan updated.' })
 
-    const agent = await agentWithSession(ctx, 'imaged-plan-command')
-    openTurn(agent.session)
-    const steer = vi.fn()
-    ;(agent as unknown as { steer: typeof steer }).steer = steer
-    const withMessage = await ctx.commands.execute(agent, '/plan sketch the layout', images, signal)
-    expect(withMessage?.result.kind).toBe('success')
-    expect(steer).toHaveBeenCalledExactlyOnceWith({
-      id: expect.any(String) as unknown,
-      role: 'user',
-      content: [
-        { type: 'image', attachment: expect.objectContaining({ attachmentId: 'att-1' }) as unknown },
-        { type: 'text', text: 'sketch the layout' },
-      ],
-      source: { kind: 'user' },
-    })
+    const documents = agent.session.events.filter(event => event.type === 'plan/document')
+    expect(documents).toHaveLength(3)
+    expect(documents[0]?.type === 'plan/document' && documents[0].data.status).toBe('executing')
+    expect(documents[1]?.type === 'plan/document' && documents[1].data.status).toBe('superseded')
+    expect(documents[2]?.type === 'plan/document' && documents[2].data.status).toBe('proposed')
+    expect(documents[2]?.type === 'plan/document' && documents[2].data.title).toBe('New')
+    expect(documents[2]?.type === 'plan/document' && documents[2].data.markdown).toBe('# New\n\nChanged.')
+  })
 
-    const bareAgent = await agentWithSession(ctx, 'imaged-bare-plan-command')
-    openTurn(bareAgent.session)
-    const bareSteer = vi.fn()
-    ;(bareAgent as unknown as { steer: typeof bareSteer }).steer = bareSteer
-    expect((await ctx.commands.execute(bareAgent, '/plan', images, signal))?.result)
-      .toEqual({ kind: 'success', text: 'Entering plan mode (applies from the next step). Use /plan off to leave.' })
-    expect(bareSteer).toHaveBeenCalledExactlyOnceWith({
-      id: expect.any(String) as unknown,
-      role: 'user',
-      content: [{ type: 'image', attachment: expect.objectContaining({ attachmentId: 'att-2' }) as unknown }],
-      source: { kind: 'user' },
-    })
-    expect(ctx.planMode.get(bareAgent)).toEqual({ active: false, pending: true })
-
-    const activeAgent = await agentWithSession(ctx, 'imaged-off-plan-command', { active: true })
-    const offSteer = vi.fn()
-    ;(activeAgent as unknown as { steer: typeof offSteer }).steer = offSteer
-    expect((await ctx.commands.execute(activeAgent, '/plan off', images, signal))?.result)
-      .toEqual({ kind: 'error', text: 'Image attachments cannot accompany /plan off.' })
-    expect(offSteer).not.toHaveBeenCalled()
-    expect(ctx.planMode.get(activeAgent)).toEqual({ active: true })
+  it('rejects malformed plan-edit JSON and missing plan documents', async () => {
+    const ctx = await setup()
+    await ctx.plugin(CommandRuntime)
+    await new Promise(resolve => setImmediate(resolve))
+    const signal = new AbortController().signal
+    const agent = await agentWithSession(ctx, 'edit-plan-error-command')
+    expect((await ctx.commands.execute(agent, '/plan-edit not-json', [], signal))?.result)
+      .toEqual({ kind: 'error', text: 'plan-edit requires a JSON object with a markdown string.' })
+    expect((await ctx.commands.execute(agent, '/plan-edit {}', [], signal))?.result)
+      .toEqual({ kind: 'error', text: 'plan-edit requires a non-empty markdown string.' })
+    expect((await ctx.commands.execute(agent, '/plan-edit {"markdown":"# X"}', [], signal))?.result)
+      .toEqual({ kind: 'error', text: 'No plan document exists to edit.' })
   })
 
   it('removes the contributed command when the plan-mode plugin is disposed', async () => {
@@ -719,11 +765,142 @@ describe('/plan', () => {
     const fiber = await ctx.plugin(PlanModeController, PLAN_CONFIG)
     await new Promise(resolve => setImmediate(resolve))
     const agent = await agentWithSession(ctx)
-    expect(ctx.commands.list(agent).map(command => command.name)).toEqual(['plan'])
+    expect(ctx.commands.list(agent).map(command => command.name)).toEqual(['plan', 'plan-edit', 'plan-select'])
 
     await fiber.dispose()
 
     expect(ctx.commands.list(agent)).toEqual([])
+  })
+})
+
+describe('plan_form', () => {
+  async function setupWithProvider(answer?: { selected: string[]; custom?: string }) {
+    const ctx = await setup()
+    await ctx.plugin(AgentRegistry)
+    await ctx.plugin(UserQuestionService)
+    const asked: AskUserQuestionRequest[] = []
+    if (answer !== undefined) {
+      ctx.userQuestions.registerProvider({
+        ask: (request) => {
+          asked.push(request)
+          return Promise.resolve({ answers: request.questions.map(question => ({ id: question.id, ...answer })) })
+        },
+      })
+    }
+    const agent = await agentWithSession(ctx, 'plan-form-agent', { active: true })
+    return { ctx, agent, asked }
+  }
+
+  const FORM_ARGS = {
+    questions: [{
+      id: 'goal',
+      question: 'What should the plan accomplish?',
+      header: 'Goal',
+      options: [{ label: 'Fix the flaky test', description: 'Narrow fix' }],
+    }],
+    header: 'Plan form',
+  }
+
+  it('registers the tool with a questions parameter and a planning form output', async () => {
+    const ctx = await setup()
+    const schema = ctx.tools.schemas().find(entry => entry.name === PLAN_FORM_TOOL)
+    const parameters = schema?.parameters as { required?: string[]; properties?: Record<string, unknown> }
+    expect(schema?.description).toMatch(/^Use only in plan mode\./)
+    expect(parameters.required).toEqual(['questions'])
+    expect(Object.keys(parameters.properties ?? {})).toEqual(['questions', 'header'])
+  })
+
+  it('rejects a call outside plan mode while remaining advertised', async () => {
+    const ctx = await setup()
+    const agent = await agentWithSession(ctx)
+    const result = await ctx.tools.execute({
+      callId: CallId('plan-form-inactive'),
+      name: PLAN_FORM_TOOL,
+      arguments: FORM_ARGS,
+      signal: new AbortController().signal,
+      agent,
+    })
+    expect(result.isError).toBe(true)
+    expect(result.content).toEqual([{ type: 'text', text: 'Error: plan_form is only available in plan mode' }])
+  })
+
+  it('logs the request and answer and returns the structured answers', async () => {
+    const { ctx, agent, asked } = await setupWithProvider({ selected: ['Fix the flaky test'] })
+    const result = await ctx.tools.execute({
+      callId: CallId('plan-form-answered'),
+      name: PLAN_FORM_TOOL,
+      arguments: FORM_ARGS,
+      signal: new AbortController().signal,
+      agent,
+    })
+    expect(result.isError).toBe(false)
+    if (result.isError) throw new Error('expected answered plan form')
+    expect(result.value).toEqual({
+      requestId: expect.any(String) as unknown,
+      answers: [{ id: 'goal', selected: ['Fix the flaky test'] }],
+    })
+    const request = agent.session.events.findLast(event => event.type === 'plan/form/request')
+    const answer = agent.session.events.findLast(event => event.type === 'plan/form/answer')
+    expect(request?.type === 'plan/form/request' && request.data).toMatchObject({
+      requestId: expect.any(String) as unknown,
+      round: 1,
+      questions: FORM_ARGS.questions,
+    })
+    expect(answer?.type === 'plan/form/answer' && answer.data).toMatchObject({
+      requestId: request?.type === 'plan/form/request' ? request.data.requestId : '',
+      outcome: 'answered',
+      answers: [{ id: 'goal', selected: ['Fix the flaky test'] }],
+    })
+    expect(asked).toHaveLength(1)
+  })
+
+  it('logs a dismissed form and tells the model to wait for the user', async () => {
+    const ctx = await setup()
+    await ctx.plugin(AgentRegistry)
+    await ctx.plugin(UserQuestionService)
+    ctx.userQuestions.registerProvider({
+      ask: () => Promise.reject(new UserQuestionError('the user cancelled ask_user_question', 'ASK_CANCELLED')),
+    })
+    const agent = await agentWithSession(ctx, 'plan-form-dismissed', { active: true })
+    const result = await ctx.tools.execute({
+      callId: CallId('plan-form-dismiss'),
+      name: PLAN_FORM_TOOL,
+      arguments: FORM_ARGS,
+      signal: new AbortController().signal,
+      agent,
+    })
+    expect(result.isError).toBe(true)
+    expect(result.content).toEqual([{ type: 'text', text: 'Error: The user dismissed the planning form to speak instead; stay in plan mode, stop here, and wait for their message.' }])
+    expect(agent.session.events.findLast(event => event.type === 'plan/form/answer')?.type === 'plan/form/answer').toBe(true)
+  })
+})
+
+describe('plan_complete', () => {
+  it('completes only an executing plan and updates the projection', async () => {
+    const ctx = await setup()
+    const agent = await agentWithSession(ctx, 'plan-complete-agent', { active: true })
+    agent.session.append('plan/document', {
+      planId: 'plan-1',
+      title: 'P',
+      markdown: '# P',
+      status: 'executing',
+      round: 1,
+      sourceEventSeqs: [],
+    })
+
+    const result = await execute(ctx, PLAN_COMPLETE_TOOL, agent)
+    expect(result.isError).toBe(false)
+    if (result.isError) throw new Error('expected plan_complete success')
+    expect(result.value).toEqual({ planId: 'plan-1', completed: true })
+    expect(foldPlanDocument(agent.session.events)?.status).toBe('completed')
+  })
+
+  it('rejects completion when no executing plan exists', async () => {
+    const ctx = await setup()
+    const agent = await agentWithSession(ctx, 'plan-complete-noop', { active: true })
+    const result = await execute(ctx, PLAN_COMPLETE_TOOL, agent)
+    expect(result.isError).toBe(true)
+    expect(result.content).toEqual([{ type: 'text', text: 'Error: plan_complete is only available while a plan is executing' }])
   })
 })
 
@@ -760,7 +937,7 @@ describe('exit_plan_mode', () => {
     const schema = ctx.tools.schemas().find(entry => entry.name === EXIT_PLAN_MODE)
     const parameters = schema?.parameters as { required?: string[]; properties?: Record<string, unknown> }
     expect(schema?.description).toMatch(/^Use only in plan mode\./)
-    expect(Object.keys(parameters.properties ?? {})).toEqual(['plan'])
+    expect(Object.keys(parameters.properties ?? {})).toEqual(['plan', 'mode'])
     expect(parameters.required).toEqual(['plan'])
   })
 
@@ -841,6 +1018,12 @@ describe('exit_plan_mode', () => {
     expect(ctx.planMode.get(agent)).toEqual({ active: true, pending: false })
     await boundary(ctx, agent, 'step-start')
     expect(foldPlanMode(agent.session.events)).toBe(false)
+    const documents = agent.session.events.filter(event => event.type === 'plan/document')
+    expect(documents).toHaveLength(3)
+    expect(documents[0]?.type === 'plan/document' && documents[0].data.status).toBe('proposed')
+    expect(documents[1]?.type === 'plan/document' && documents[1].data.status).toBe('approved')
+    expect(documents[2]?.type === 'plan/document' && documents[2].data.status).toBe('executing')
+    expect(foldPlanDocument(agent.session.events)?.status).toBe('executing')
     expect(asked).toHaveLength(1)
     expect(asked[0]?.agent).toBe(agent)
     expect(asked[0]?.questions[0]?.detail).toBe('# The plan\n\ndo things')
@@ -989,10 +1172,12 @@ describe('exit_plan_mode', () => {
     const { ctx, agent, asked } = await setupWithReview({ selected: ['Approve'] })
     await callExit(ctx, agent)
     const question = asked[0]?.questions[0]
-    expect(question?.intent).toEqual({ kind: 'plan-review', approve: 'Approve' })
+    const intent = question?.intent
+    expect(intent).toEqual({ kind: 'plan-review', approve: 'Approve' })
     // The named label is one this same question offers, so a UI honouring the
     // intent answers a choice this tool accepts.
-    expect(question?.options?.map(option => option.label)).toContain(question?.intent?.approve)
+    expect(question?.options?.map(option => option.label)).toContain(
+      intent?.kind === 'plan-review' ? intent.approve : undefined)
   })
 
   it('reads a dismissed review as the user taking the turn back, not as a failure', async () => {

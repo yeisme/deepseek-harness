@@ -25,7 +25,7 @@ async function bench() {
     name: 'root',
     children: { 'conversation.input.plan': { kind: 'single', scope: 'session' } },
   } as never, () => null)
-  const execute = vi.fn((_sessionId: SessionId, _line: string) =>
+  const execute = vi.fn((_sessionId: SessionId, _line: string, _images: readonly unknown[]) =>
     Promise.resolve({ ok: true, value: { commandId: 'c1', result: { kind: 'success' as const } } }))
   const commandsRemote = { execute }
   ctx.provide('remote', { commands: commandsRemote })

@@ -45,6 +45,8 @@ const EXPECTED_TOOLS = [
   'job_list',
   'job_output',
   'list_agents',
+  'plan_complete',
+  'plan_form',
   'ralph',
   'read',
   'read_image',

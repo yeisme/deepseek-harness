@@ -1,0 +1,253 @@
+/* Plan-document dock strip: compact status line above the composer, expanding
+   into the latest markdown, inline editing, and the revision list. The card
+   follows the GoalBar/TodoPanel composer dock family (tip surface, 36px
+   collapsed row, 12px radius, shared dock column width). */
+
+.frame {
+  box-sizing: border-box;
+  flex: none;
+  overflow: hidden;
+  margin: 0 auto;
+  width: calc(
+    100% -
+    var(--dsh-composer-side-clearance) -
+    var(--dsh-composer-side-clearance) -
+    var(--dsh-composer-dock-inset) -
+    var(--dsh-composer-dock-inset) -
+    var(--dsh-composer-dock-inset) -
+    var(--dsh-composer-dock-inset)
+  );
+  max-width: calc(
+    var(--dsh-composer-card-max-width) -
+    var(--dsh-composer-dock-inset) -
+    var(--dsh-composer-dock-inset) -
+    var(--dsh-composer-dock-inset) -
+    var(--dsh-composer-dock-inset)
+  );
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 12px;
+  background: var(--dsw-specific-tip);
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 36px;
+  padding: 4px 5px 4px 12px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--dsw-alias-label-tertiary);
+}
+
+.title {
+  flex: none;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 24px;
+  font-weight: 500;
+}
+
+.status {
+  flex: none;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+.frame[data-status='proposed'] .dot {
+  background: var(--dsw-alias-state-warn-label);
+}
+
+.frame[data-status='proposed'] .status {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+.frame[data-status='approved'] .dot,
+.frame[data-status='executing'] .dot {
+  background: var(--dsw-alias-state-business-primary);
+}
+
+.frame[data-status='approved'] .status,
+.frame[data-status='executing'] .status {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.frame[data-status='completed'] .dot {
+  background: var(--dsw-alias-state-success-primary);
+}
+
+.frame[data-status='completed'] .status {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.frame[data-status='rejected'] .dot {
+  background: var(--dsw-alias-state-error-primary);
+}
+
+.frame[data-status='rejected'] .status {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.planTitle {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-primary-dimmed);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+}
+
+.iconBtn:focus-visible,
+.titleInput:focus-visible,
+.markdownEditor:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.iconBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.titleInput {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-base);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
+  outline: none;
+}
+
+.titleInput:focus {
+  border-color: var(--dsw-alias-state-business-primary);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 12px 12px;
+  border-top: 1px solid var(--dsw-alias-border-l2);
+}
+
+.markdown {
+  max-height: 240px;
+  overflow: auto;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.markdownEditor {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 160px;
+  padding: 8px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-base);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
+  outline: none;
+  resize: vertical;
+}
+
+.markdownEditor:focus {
+  border-color: var(--dsw-alias-state-business-primary);
+}
+
+.error {
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.historyTitle {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.revisions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.revision {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.revisionStatus {
+  flex: 0 0 auto;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.revisionTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.feedback {
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 12px;
+  line-height: 18px;
+}
