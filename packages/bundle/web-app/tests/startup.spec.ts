@@ -59,6 +59,7 @@ export const apply = ctx => globalThis.__webStartupApply(ctx)
     '    openBrowser: !!js ctx.webStartup.openBrowser',
     '    port: !!js ctx.webStartup.port ?? 3080',
     '    trustedHosts: !!js ctx.webStartup.trustedHosts',
+    '    token: !!js ctx.webStartup.token',
     '- id: provider',
     `  name: ${pathToFileURL(join(dir, 'provider.mjs')).href}`,
     '',
@@ -134,11 +135,41 @@ describe('web command-line provider', () => {
     expect(observed.exits).toEqual([1])
   })
 
-  it('rejects the intentionally unsupported all-interfaces host before the consumer activates', async () => {
+  it('rejects the all-interfaces host without remote authentication', async () => {
     const { values, observed } = await bootProvider(['--host', '0.0.0.0'])
-    expect(observed.out).toContain('--host 0.0.0.0 is intentionally not supported yet for safety: it would expose remote code execution to the network; use 127.0.0.1 instead')
+    expect(observed.out).toContain('--host 0.0.0.0 requires remote authentication; pass --token <token> or set DSH_ACCESS_TOKEN')
     expect(values).toBeUndefined()
     expect(observed.readerConfig).toBeUndefined()
     expect(observed.exits).toEqual([1])
+  })
+
+  it('allows the all-interfaces host when a token is supplied', async () => {
+    const { values, observed } = await bootProvider(['--host', '0.0.0.0', '--token', 'dsh_test'])
+    expect(values).toEqual({
+      host: '0.0.0.0',
+      openBrowser: true,
+      trustedHosts: [],
+      token: 'dsh_test',
+    })
+    expect(observed.readerConfig).toEqual({
+      host: '0.0.0.0',
+      openBrowser: true,
+      port: 3080,
+      trustedHosts: [],
+      token: 'dsh_test',
+    })
+    expect(observed.exits).toEqual([])
+  })
+
+  it('publishes --token for loopback deployments too', async () => {
+    const { values, observed } = await bootProvider(['--token', 'dsh_loop'])
+    expect(values).toEqual({ openBrowser: true, trustedHosts: [], token: 'dsh_loop' })
+    expect(observed.readerConfig).toEqual({
+      host: '127.0.0.1',
+      openBrowser: true,
+      port: 3080,
+      trustedHosts: [],
+      token: 'dsh_loop',
+    })
   })
 })

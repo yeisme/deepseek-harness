@@ -8,9 +8,18 @@ import { toFetchHandler } from '@deepseek-ai/dsh-host-apiproxy'
 import { API_PATH, HOST_EVENTS_PATH, MUX_EVENTS_PATH } from './api-path.ts'
 import { bridge, DEFAULT_MAX_REQUEST_BODY_BYTES } from './http-bridge.ts'
 import { assertTrustedAuthority, isTrustedApiRequest } from './api-request-trust.ts'
+import { DSH_ACCESS_TOKEN_COOKIE_FALLBACK, DshTokenGate, type DshTokenAuthConfig } from './token-auth.ts'
 import { HostConnectionService } from './rpc-host.ts'
 import { rejectWebSocketUpgrade, WebSocketDownlinks } from './websocket-downlink.ts'
 
+export type {
+  DshTokenAuthConfig,
+  DshTokenAuthRequest,
+  DshTokenAuthResult,
+  DshTokenAuthToken,
+  DshTokenScope,
+} from './token-auth.ts'
+export { DshTokenGate } from './token-auth.ts'
 export type {
   ConnectionRpcAuthority,
   ConnectionRpcEndpointMatcher,
@@ -57,12 +66,19 @@ export interface ConnectionConfig {
    * that is not a bare, canonical authority fails the plugin load.
    */
   trustedHosts?: string[]
+  /**
+   * Optional built-in bearer-token authentication. When present, every /api
+   * HTTP request and both WebSocket downlinks require a valid token, and an
+   * admin-scoped token may reach methods that otherwise stay loopback-only.
+   */
+  tokenAuth?: DshTokenAuthConfig
   /** Maximum buffered JSON body for every `/api` request. Default: 300 MiB. */
   maxRequestBodyBytes?: number
 }
 
 export const Config: z<ConnectionConfig> = z.object({
   trustedHosts: z.array(String).default([]),
+  tokenAuth: z.any(),
   maxRequestBodyBytes: z.natural().min(1).default(DEFAULT_MAX_REQUEST_BODY_BYTES),
 })
 
@@ -131,6 +147,7 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
   // The Loader resolves schema defaults; hand-built test contexts may pass none.
   const trustedHosts = config?.trustedHosts ?? []
   const maxRequestBodyBytes = config?.maxRequestBodyBytes ?? DEFAULT_MAX_REQUEST_BODY_BYTES
+  const tokenGate = config?.tokenAuth === undefined ? undefined : new DshTokenGate(config.tokenAuth)
   // Config boundary: a malformed entry fails the load loudly here rather than
   // silently authorizing its hostname prefix at request time.
   for (const entry of trustedHosts) assertTrustedAuthority(entry)
@@ -144,7 +161,8 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
         : undefined
       if (method !== undefined
         && PRIVILEGED_METHODS.has(method)
-        && !isTrustedApiRequest(request, [])) {
+        && !isTrustedApiRequest(request, [])
+        && !(tokenGate !== undefined && tokenGate.authorizeAdmin(request))) {
         return new Response('forbidden', { status: 403 })
       }
       if (request.method === 'GET' && (pathname === MUX_EVENTS_PATH || pathname === HOST_EVENTS_PATH)) {
@@ -167,6 +185,34 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
         res.end('forbidden')
         return
       }
+      const requestUrl = new URL(req.url ?? '/', 'http://dsh.internal')
+      if (requestUrl.pathname === `${API_PATH}/auth/login` && req.method === 'GET') {
+        const token = requestUrl.searchParams.get('token')
+        if (tokenGate === undefined || token === null || tokenGate.authenticateToken(token) === undefined) {
+          res.writeHead(401)
+          res.end('unauthorized')
+          return
+        }
+        res.writeHead(302, {
+          location: '/',
+          'set-cookie': `${DSH_ACCESS_TOKEN_COOKIE_FALLBACK}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Strict`,
+        })
+        res.end()
+        return
+      }
+      if (requestUrl.pathname === `${API_PATH}/auth/logout` && (req.method === 'GET' || req.method === 'POST')) {
+        res.writeHead(302, {
+          location: '/',
+          'set-cookie': `${DSH_ACCESS_TOKEN_COOKIE_FALLBACK}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`,
+        })
+        res.end()
+        return
+      }
+      if (tokenGate !== undefined && !tokenGate.authorizeHttp(req)) {
+        res.writeHead(401)
+        res.end('unauthorized')
+        return
+      }
       await bridge(req, res, fetchHandler, maxRequestBodyBytes)
     },
   }
@@ -182,6 +228,10 @@ export function apply(ctx: Context, config?: ConnectionConfig): void {
         path,
         handler: (req, socket, head) => {
           if (!isTrustedApiRequest(req, trustedHosts)) {
+            rejectWebSocketUpgrade(socket)
+            return
+          }
+          if (tokenGate !== undefined && !tokenGate.authorizeWebSocket(req)) {
             rejectWebSocketUpgrade(socket)
             return
           }

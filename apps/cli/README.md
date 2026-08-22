@@ -12,6 +12,7 @@ The `dsh` command is the product launcher for profiles: ordered stacks of plugin
 | `dsh --profile headless "job"` | Run one fresh persisted session, print the final answer, and exit. |
 | `dsh web` | Alias of `--profile web`. |
 | `dsh plugin --profile <name> <pnpm args>` | Manage a profile's plugins by forwarding to pnpm in the profile directory. |
+| `dsh auth token create/list/revoke` | Manage DSH remote-access tokens; plaintext is printed once at creation. |
 
 The invoking directory is the default workspace root. The `web` and `headless` profiles auto-initialize on first use from shipped templates; any other profile must be created through `dsh plugin`.
 
@@ -21,6 +22,8 @@ The launcher parses only its own flags and hands everything after them to the bo
 
 ```sh
 dsh --profile web --port 8080       # --port belongs to the web app
+dsh --profile web --host 0.0.0.0 --token "$(dsh auth token create --name remote --scope admin)"   # remote web with token auth
+dsh auth token list                  # list stored token metadata
 dsh --profile tui --resume <id>     # example, assuming the tui profile is installed; --resume belongs to the terminal app
 dsh --profile headless "run the tests"
 dsh --profile web --help            # the web app's flags, not the launcher's

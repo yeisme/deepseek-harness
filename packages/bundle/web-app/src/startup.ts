@@ -19,7 +19,6 @@ export const inject = ['cmdlineArgs']
 /** Service provided by this ordinary plugin and injected by flag-configured rows. */
 export const WEB_STARTUP_SERVICE = 'webStartup'
 
-/** What the web rows read from {@link WEB_STARTUP_SERVICE}. */
 export interface WebStartupValues {
   /** Whether this invocation opens the default browser after startup. */
   openBrowser: boolean
@@ -29,6 +28,8 @@ export interface WebStartupValues {
   port?: number
   /** Explicit `--trusted-host` authorities, in argument order. */
   trustedHosts: string[]
+  /** `--token`, absent when the invocation did not name one. */
+  token?: string
 }
 
 /** The web flag family, as commander parsed it. */
@@ -37,6 +38,7 @@ interface WebOptions {
   open: boolean
   port?: string
   trustedHost?: string[]
+  token?: string
 }
 
 /**
@@ -52,11 +54,13 @@ function webCommand(): Command {
     .option('--no-open', 'do not open the Web UI in the default browser')
     .option('--port <port>', 'listen port; pass 0 to let the OS pick a free one')
     .option('--trusted-host <authority...>', 'extra authority the /api browser-trust fence accepts (host or host:port; repeatable)')
+    .option('--token <token>', 'bearer token required for remote /api and WebSocket access; required with --host 0.0.0.0')
     .addHelpText('after', `
 Examples:
   dsh --profile web                          serve on the composed host and port
   dsh --profile web --no-open                serve without opening a browser
   dsh --profile web --port 8080              serve on another port
+  dsh --profile web --host 0.0.0.0 --token dsh_xxx   serve remotely with token auth
 `)
 }
 
@@ -71,8 +75,9 @@ export function apply(ctx: Context): void {
   const program = webCommand()
   program.action(() => {
     const options = program.opts<WebOptions>()
-    if (options.host === '0.0.0.0') {
-      program.error('error: --host 0.0.0.0 is intentionally not supported yet for safety: it would expose remote code execution to the network; use 127.0.0.1 instead')
+    const token = options.token ?? process.env.DSH_ACCESS_TOKEN
+    if (options.host === '0.0.0.0' && (token === undefined || token === '')) {
+      program.error('error: --host 0.0.0.0 requires remote authentication; pass --token <token> or set DSH_ACCESS_TOKEN')
     }
     if (options.port !== undefined && !/^\d+$/.test(options.port)) {
       program.error(`error: --port must be a number, got ${JSON.stringify(options.port)}`)
@@ -82,6 +87,7 @@ export function apply(ctx: Context): void {
       ...options.host !== undefined && { host: options.host },
       ...options.port !== undefined && { port: Number(options.port) },
       trustedHosts: options.trustedHost ?? [],
+      ...token !== undefined && token !== '' && { token },
     } satisfies WebStartupValues)
   })
   parseCmdline(ctx, program)

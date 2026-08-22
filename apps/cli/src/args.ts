@@ -44,8 +44,15 @@ interface PluginInvocation {
   args: string[]
 }
 
+/** Manage DSH remote-access tokens. */
+interface AuthInvocation {
+  mode: 'auth'
+  /** Raw arguments after `auth`, including the subcommand and its flags. */
+  args: string[]
+}
+
 /** The resolved `dsh` invocation. Help, version, and errors exit inside {@link parseDshArgs}. */
-export type DshInvocation = ProfileInvocation | DumpConfigInvocation | PluginInvocation
+export type DshInvocation = ProfileInvocation | DumpConfigInvocation | PluginInvocation | AuthInvocation
 
 /** Launcher flags shared by the default command and the `web` alias. */
 interface BootOptions {
@@ -178,6 +185,18 @@ export function parseDshArgs(argv: readonly string[], version: string): DshInvoc
       if (options.profile === '') program.error('error: --profile needs a name')
       if (args.length === 0) program.error('error: plugin needs pnpm arguments to forward (e.g. add <package>)')
       resolved = { mode: 'plugin', profile: options.profile, args }
+    })
+
+  const auth = program.command('auth').description('manage DSH remote-access tokens')
+  auth
+    .helpOption(false)
+    .allowUnknownOption()
+    .passThroughOptions()
+    .enablePositionalOptions()
+    .argument('[args...]', 'auth subcommand arguments (token create, token list, token revoke <id>)')
+    .action((args: string[]) => {
+      rejectParentOptions('auth')
+      resolved = { mode: 'auth', args }
     })
 
   try {

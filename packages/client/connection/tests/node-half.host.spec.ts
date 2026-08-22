@@ -75,7 +75,10 @@ function fakeResponse(): { response: ServerResponse; state: { status?: number; b
   return { response, state }
 }
 
-async function mounted(config?: { trustedHosts?: string[] }): Promise<{
+async function mounted(config?: {
+  trustedHosts?: string[]
+  tokenAuth?: { tokens: { token: string; scopes?: string[] }[] }
+}): Promise<{
   routes: WebRoute[]
   upgrades: WebUpgradeRoute[]
   dispose: () => Promise<void>
@@ -164,6 +167,55 @@ describe('connection node half', () => {
     }), response)
     expect(state.status).toBe(403)
     expect(state.body).toBe('forbidden')
+    await dispose()
+  })
+
+  it('requires a token on /api when tokenAuth is configured', async () => {
+    const { routes, dispose } = await mounted({
+      tokenAuth: { tokens: [{ token: 'secret', scopes: ['admin'] }] },
+    })
+    const denied = fakeResponse()
+    await routes[0]!.handler(fakeRequest({ host: '127.0.0.1:3080' }), denied.response)
+    expect(denied.state.status).toBe(401)
+    expect(denied.state.body).toBe('unauthorized')
+    const allowed = fakeResponse()
+    await routes[0]!.handler(fakeRequest({
+      host: '127.0.0.1:3080', authorization: 'Bearer secret',
+    }), allowed.response)
+    expect(allowed.state.status).not.toBe(401)
+    await dispose()
+  })
+
+  it('sets a session cookie through the token login endpoint', async () => {
+    const { routes, dispose } = await mounted({
+      tokenAuth: { tokens: [{ token: 'secret', scopes: ['admin'] }] },
+    })
+    const denied = fakeResponse()
+    await routes[0]!.handler(fakeRequest({
+      host: '127.0.0.1:3080',
+    }, `${API_PATH}/auth/login?token=wrong`), denied.response)
+    expect(denied.state.status).toBe(401)
+    const allowed = fakeResponse()
+    await routes[0]!.handler(fakeRequest({
+      host: '127.0.0.1:3080',
+    }, `${API_PATH}/auth/login?token=secret`), allowed.response)
+    expect(allowed.state.status).toBe(302)
+    await dispose()
+  })
+
+  it('allows admin-scoped tokens to reach privileged methods over remote authorities', async () => {
+    const { routes, dispose } = await mounted({
+      trustedHosts: ['harness.example'],
+      tokenAuth: { tokens: [{ token: 'secret', scopes: ['admin'] }] },
+    })
+    const denied = fakeResponse()
+    await routes[0]!.handler(fakeRequest({ host: 'harness.example' }, `${API_PATH}/settings.describe`), denied.response)
+    expect(denied.state.status).toBe(401)
+    const allowed = fakeResponse()
+    await routes[0]!.handler(fakeRequest({
+      host: 'harness.example', authorization: 'Bearer secret',
+    }, `${API_PATH}/settings.describe`), allowed.response)
+    expect(allowed.state.status).not.toBe(403)
     await dispose()
   })
 

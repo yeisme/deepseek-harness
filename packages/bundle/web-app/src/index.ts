@@ -25,6 +25,7 @@ import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-system-prompt'
 import type {} from '@deepseek-ai/dsh-shell-env'
+import type { DshTokenAuthConfig } from '@deepseek-ai/dsh-client-connection'
 
 /** Stable Cordis plugin name. */
 export const name = 'web-app'
@@ -53,6 +54,8 @@ export interface Config {
   surfaceContext: boolean
   /** Explicit `--trusted-host` authorities from this invocation. */
   trustedHosts: string[]
+  /** `--token` from this invocation; enables remote authentication. */
+  token?: string
 }
 
 export const Config: z<Config> = z.object({
@@ -60,6 +63,7 @@ export const Config: z<Config> = z.object({
   printUrl: z.boolean().default(true),
   surfaceContext: z.boolean().default(true),
   trustedHosts: z.array(String).default([]),
+  token: z.string(),
 })
 
 /** Bind-dependent Web values shared by the trust fence and URL display. */
@@ -68,6 +72,8 @@ export interface WebRuntimeValues {
   lanAddresses: string[]
   /** LAN literals followed by explicit invocation authorities. */
   trustedHosts: string[]
+  /** Built-in bearer-token authentication for remote access. */
+  tokenAuth?: DshTokenAuthConfig
 }
 
 /** Environment variable naming the canonical local URL of this Web GUI. */
@@ -224,7 +230,12 @@ export const internals: {
  * @param config - validated {@link Config}.
  */
 export function apply(ctx: Context, config: Config): void {
-  const runtime = resolveLanTrust(ctx.webServer.host, config.trustedHosts)
+  const runtime: WebRuntimeValues = {
+    ...resolveLanTrust(ctx.webServer.host, config.trustedHosts),
+    ...config.token === undefined ? {} : {
+      tokenAuth: { tokens: [{ token: config.token, scopes: ['admin'] }] },
+    },
+  }
   // The loopback URL belongs to this host. Under SSH, the operator reaches it
   // through a local forwarding address that this process cannot derive.
   const handoffBrowser = config.openBrowser && !launchedThroughSsh(ctx)

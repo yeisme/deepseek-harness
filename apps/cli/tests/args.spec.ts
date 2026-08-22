@@ -57,6 +57,15 @@ describe('parseDshArgs', () => {
       .toEqual({ mode: 'plugin', profile: 'tui', args: ['add', '--save-dev', 'x'] })
   })
 
+  it('routes the auth token subcommand', () => {
+    expect(parse(['auth', 'token', 'create', '--name', 'admin']))
+      .toEqual({ mode: 'auth', args: ['token', 'create', '--name', 'admin'] })
+    expect(parse(['auth', 'token', 'list']))
+      .toEqual({ mode: 'auth', args: ['token', 'list'] })
+    expect(parse(['auth', 'token', 'revoke', 'abc']))
+      .toEqual({ mode: 'auth', args: ['token', 'revoke', 'abc'] })
+  })
+
   it('routes profile and web config dumps', () => {
     expect(parse(['--profile', 'web', '--dump-config']))
       .toEqual({ mode: 'dump-config', profile: 'web', defaultOnly: false, patches: [] })
